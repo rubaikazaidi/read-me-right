@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
+import { EditBookDialog } from "@/components/EditBookDialog";
+import { Pencil } from "lucide-react";
 
 interface BookRequest {
   id: string;
@@ -27,6 +29,7 @@ export function LibrarianDashboard() {
   const [requests, setRequests] = useState<BookRequest[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -169,24 +172,33 @@ export function LibrarianDashboard() {
         <CardContent>
           <div className="space-y-4">
             {books.map((book) => (
-              <div key={book.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
+              <div key={book.id} className="flex items-center justify-between p-4 border rounded-lg gap-4">
+                <div className="flex-1">
                   <p className="font-semibold">{book.title}</p>
                   <p className="text-sm text-muted-foreground">by {book.author}</p>
                   <Badge className="mt-1">
                     {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
                   </Badge>
                 </div>
-                <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="borrowed">Borrowed</SelectItem>
-                    <SelectItem value="late">Late</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingBook(book)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="borrowed">Borrowed</SelectItem>
+                      <SelectItem value="late">Late</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             ))}
           </div>
@@ -241,6 +253,18 @@ export function LibrarianDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {editingBook && (
+        <EditBookDialog
+          book={editingBook}
+          open={!!editingBook}
+          onOpenChange={(open) => !open && setEditingBook(null)}
+          onBookUpdated={() => {
+            fetchBooks();
+            setEditingBook(null);
+          }}
+        />
+      )}
     </div>
   );
 }
