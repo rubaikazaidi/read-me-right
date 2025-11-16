@@ -6,6 +6,7 @@ import { Book } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { LibraryStats } from "@/components/LibraryStats";
+import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,18 +82,23 @@ const Index = () => {
 
   const handleRequestBook = async (bookId: string) => {
     try {
-      const { error } = await supabase.from("book_requests").insert({
-        book_id: bookId,
-        user_id: user?.id,
-        status: "pending",
+      const { data, error } = await supabase.rpc("handle_book_request", {
+        book_id_param: bookId,
+        user_id_param: user?.id,
       });
 
       if (error) throw error;
 
+      const result = data as { success: boolean; message: string; queue_position: number | null };
+
       toast({
-        title: "Request submitted!",
-        description: "Your book request has been submitted.",
+        title: result.message,
+        description: result.queue_position 
+          ? `You are #${result.queue_position} in the queue`
+          : "You can pick up the book now!",
       });
+
+      fetchBooks();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -159,33 +165,72 @@ const Index = () => {
             {userRole === "librarian" && <AddBookDialog onBookAdded={handleBookAdded} />}
           </div>
 
-          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 max-w-md">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="available">Available</TabsTrigger>
-              <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
-              <TabsTrigger value="late">Late</TabsTrigger>
-            </TabsList>
+          {userRole === "librarian" ? (
+            <Tabs defaultValue="books" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-md">
+                <TabsTrigger value="books">Books</TabsTrigger>
+                <TabsTrigger value="manage">Manage & Queues</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value={statusFilter} className="mt-6">
-              {filteredBooks.length === 0 ? (
-                <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No books found</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredBooks.map((book) => (
-                    <BookCard
-                      key={book.id}
-                      book={book}
-                      onRequestBook={userRole === "student" ? handleRequestBook : undefined}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="books" className="mt-6">
+                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 max-w-md mb-6">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="available">Available</TabsTrigger>
+                    <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+                    <TabsTrigger value="late">Late</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value={statusFilter}>
+                    {filteredBooks.length === 0 ? (
+                      <div className="text-center py-12">
+                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No books found</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredBooks.map((book) => (
+                          <BookCard key={book.id} book={book} />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="manage" className="mt-6">
+                <LibrarianDashboard />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 max-w-md">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="available">Available</TabsTrigger>
+                <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+                <TabsTrigger value="late">Late</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={statusFilter} className="mt-6">
+                {filteredBooks.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No books found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredBooks.map((book) => (
+                      <BookCard
+                        key={book.id}
+                        book={book}
+                        onRequestBook={handleRequestBook}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </main>
     </div>
