@@ -4,10 +4,10 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  isbn?: string;
-  coverUrl?: string;
+  isbn: string;
+  category: string;
   status: BookStatus;
-  borrowedBy?: string;
-  dueDate?: string;
-  addedDate: string;
+  borrowed_by?: string | null;
+  due_date?: string | null;
+  created_at?: string;
 }

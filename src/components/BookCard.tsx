@@ -1,10 +1,12 @@
 import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
 
 interface BookCardProps {
   book: Book;
+  onRequestBook?: (bookId: string) => void;
 }
 
 const statusConfig = {
@@ -22,24 +24,16 @@ const statusConfig = {
   },
 };
 
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, onRequestBook }: BookCardProps) {
   const statusStyle = statusConfig[book.status];
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
         <div className="aspect-[2/3] overflow-hidden bg-muted relative">
-          {book.coverUrl ? (
-            <img
-              src={book.coverUrl}
-              alt={`Cover of ${book.title}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-              <BookOpen className="w-16 h-16 text-primary/40" />
-            </div>
-          )}
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+            <BookOpen className="w-16 h-16 text-primary/40" />
+          </div>
           <Badge className={`absolute top-3 right-3 ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
@@ -57,11 +51,23 @@ export function BookCard({ book }: BookCardProps) {
             ISBN: {book.isbn}
           </p>
         )}
+        {book.category && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Category: {book.category}
+          </p>
+        )}
       </CardContent>
-      {(book.borrowedBy || book.dueDate) && (
+      {onRequestBook && book.status === "available" && (
+        <CardFooter className="px-4 pb-4 pt-0">
+          <Button onClick={() => onRequestBook(book.id)} className="w-full">
+            Request Book
+          </Button>
+        </CardFooter>
+      )}
+      {(book.borrowed_by || book.due_date) && (
         <CardFooter className="px-4 pb-4 pt-0 text-xs text-muted-foreground">
-          {book.borrowedBy && <p>Borrowed by: {book.borrowedBy}</p>}
-          {book.dueDate && <p>Due: {new Date(book.dueDate).toLocaleDateString()}</p>}
+          {book.borrowed_by && <p>Borrowed by: {book.borrowed_by}</p>}
+          {book.due_date && <p>Due: {new Date(book.due_date).toLocaleDateString()}</p>}
         </CardFooter>
       )}
     </Card>
