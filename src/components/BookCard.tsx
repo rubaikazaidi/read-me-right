@@ -2,12 +2,14 @@ import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Pencil } from "lucide-react";
 
 interface BookCardProps {
   book: Book;
   onRequestBook?: (bookId: string) => void;
   isLibrarian?: boolean;
+  onEdit?: () => void;
+  userRequest?: { status: string; queue_position: number | null } | null;
 }
 
 const statusConfig = {
@@ -25,7 +27,7 @@ const statusConfig = {
   },
 };
 
-export function BookCard({ book, onRequestBook, isLibrarian = false }: BookCardProps) {
+export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, userRequest }: BookCardProps) {
   const statusStyle = statusConfig[book.status];
 
   return (
@@ -38,6 +40,16 @@ export function BookCard({ book, onRequestBook, isLibrarian = false }: BookCardP
           <Badge className={`absolute top-3 right-3 ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
+          {onEdit && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-3 left-3"
+              onClick={onEdit}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-4">
@@ -58,7 +70,7 @@ export function BookCard({ book, onRequestBook, isLibrarian = false }: BookCardP
           </p>
         )}
       </CardContent>
-      {onRequestBook && (
+      {onRequestBook && !userRequest && (
         <CardFooter className="px-4 pb-4 pt-0">
           <Button 
             onClick={() => onRequestBook(book.id)} 
@@ -67,6 +79,21 @@ export function BookCard({ book, onRequestBook, isLibrarian = false }: BookCardP
           >
             {book.status === "available" ? "Borrow Book" : "Join Queue"}
           </Button>
+        </CardFooter>
+      )}
+      {userRequest && (
+        <CardFooter className="px-4 pb-4 pt-0">
+          <div className="w-full text-center p-3 bg-muted rounded-md">
+            <p className="text-sm font-medium">
+              {userRequest.status === "approved" ? (
+                "✓ Book Borrowed"
+              ) : userRequest.queue_position ? (
+                <>In Queue: Position #{userRequest.queue_position}</>
+              ) : (
+                "Request Pending"
+              )}
+            </p>
+          </div>
         </CardFooter>
       )}
       {isLibrarian && (book.borrowed_by || book.due_date) && (

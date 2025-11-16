@@ -6,8 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
-import { EditBookDialog } from "@/components/EditBookDialog";
-import { Pencil } from "lucide-react";
 
 interface BookRequest {
   id: string;
@@ -29,12 +27,31 @@ export function LibrarianDashboard() {
   const [requests, setRequests] = useState<BookRequest[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingBook, setEditingBook] = useState<Book | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchRequests();
     fetchBooks();
+
+    // Set up realtime subscription for book requests
+    const channel = supabase
+      .channel('book-requests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'book_requests'
+        },
+        () => {
+          fetchRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchRequests = async () => {
@@ -180,25 +197,16 @@ export function LibrarianDashboard() {
                     {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingBook(book)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="borrowed">Borrowed</SelectItem>
-                      <SelectItem value="late">Late</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="borrowed">Borrowed</SelectItem>
+                    <SelectItem value="late">Late</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             ))}
           </div>
@@ -253,18 +261,6 @@ export function LibrarianDashboard() {
           )}
         </CardContent>
       </Card>
-
-      {editingBook && (
-        <EditBookDialog
-          book={editingBook}
-          open={!!editingBook}
-          onOpenChange={(open) => !open && setEditingBook(null)}
-          onBookUpdated={() => {
-            fetchBooks();
-            setEditingBook(null);
-          }}
-        />
-      )}
     </div>
   );
 }
