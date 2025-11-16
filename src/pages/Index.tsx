@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Book } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
+import { EditBookDialog } from "@/components/EditBookDialog";
 import { LibraryStats } from "@/components/LibraryStats";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,8 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [userRequests, setUserRequests] = useState<Record<string, { status: string; queue_position: number | null }>>({});
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -33,8 +36,11 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       fetchBooks();
+      if (userRole === "student") {
+        fetchUserRequests();
+      }
     }
-  }, [user]);
+  }, [user, userRole]);
 
   const fetchBooks = async () => {
     try {
@@ -54,6 +60,28 @@ const Index = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserRequests = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("book_requests")
+        .select("book_id, status, queue_position")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const requestsMap = (data || []).reduce((acc, req) => {
+        acc[req.book_id] = { status: req.status, queue_position: req.queue_position };
+        return acc;
+      }, {} as Record<string, { status: string; queue_position: number | null }>);
+
+      setUserRequests(requestsMap);
+    } catch (error: any) {
+      console.error("Failed to fetch user requests:", error);
     }
   };
 
@@ -80,6 +108,11 @@ const Index = () => {
     fetchBooks();
   };
 
+  const handleBookUpdated = () => {
+    fetchBooks();
+    setEditingBook(null);
+  };
+
   const handleRequestBook = async (bookId: string) => {
     try {
       const { data, error } = await supabase.rpc("handle_book_request", {
@@ -99,6 +132,7 @@ const Index = () => {
       });
 
       fetchBooks();
+      fetchUserRequests();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -190,7 +224,12 @@ const Index = () => {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredBooks.map((book) => (
-                          <BookCard key={book.id} book={book} isLibrarian={true} />
+                          <BookCard 
+                            key={book.id} 
+                            book={book} 
+                            isLibrarian={true}
+                            onEdit={() => setEditingBook(book)}
+                          />
                         ))}
                       </div>
                     )}
@@ -225,6 +264,7 @@ const Index = () => {
                         book={book}
                         onRequestBook={handleRequestBook}
                         isLibrarian={false}
+                        userRequest={userRequests[book.id] || null}
                       />
                     ))}
                   </div>
@@ -234,6 +274,15 @@ const Index = () => {
           )}
         </div>
       </main>
+
+      {editingBook && (
+        <EditBookDialog
+          book={editingBook}
+          open={!!editingBook}
+          onOpenChange={(open) => !open && setEditingBook(null)}
+          onBookUpdated={handleBookUpdated}
+        />
+      )}
     </div>
   );
 };
