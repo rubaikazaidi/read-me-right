@@ -1,150 +1,192 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Book } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { LibraryStats } from "@/components/LibraryStats";
 import { Input } from "@/components/ui/input";
-import { Library, Search } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, BookOpen, LogOut } from "lucide-react";
 
-const initialBooks: Book[] = [
-  {
-    id: "1",
-    title: "The Great Gatsby",
-    author: "F. Scott Fitzgerald",
-    isbn: "978-0743273565",
-    coverUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
-    status: "available",
-    addedDate: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "To Kill a Mockingbird",
-    author: "Harper Lee",
-    isbn: "978-0061120084",
-    coverUrl: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=600&fit=crop",
-    status: "borrowed",
-    borrowedBy: "John Smith",
-    dueDate: "2024-02-20",
-    addedDate: "2024-01-10",
-  },
-  {
-    id: "3",
-    title: "1984",
-    author: "George Orwell",
-    isbn: "978-0451524935",
-    coverUrl: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&h=600&fit=crop",
-    status: "late",
-    borrowedBy: "Jane Doe",
-    dueDate: "2024-01-30",
-    addedDate: "2024-01-05",
-  },
-  {
-    id: "4",
-    title: "Pride and Prejudice",
-    author: "Jane Austen",
-    isbn: "978-0141439518",
-    status: "available",
-    addedDate: "2024-01-20",
-  },
-];
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [books, setBooks] = useState<Book[]>(initialBooks);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { user, loading: authLoading, userRole, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
 
-  const handleAddBook = (newBook: Book) => {
-    setBooks([newBook, ...books]);
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchBooks();
+    }
+  }, [user]);
+
+  const fetchBooks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setBooks(data as Book[] || []);
+      setFilteredBooks(data as Book[] || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch books",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.isbn?.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    let filtered = books;
 
-    const matchesStatus =
-      statusFilter === "all" || book.status === statusFilter;
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          book.isbn.includes(searchTerm)
+      );
+    }
 
-    return matchesSearch && matchesStatus;
-  });
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((book) => book.status === statusFilter);
+    }
+
+    setFilteredBooks(filtered);
+  }, [searchTerm, statusFilter, books]);
+
+  const handleBookAdded = () => {
+    fetchBooks();
+  };
+
+  const handleRequestBook = async (bookId: string) => {
+    try {
+      const { error } = await supabase.from("book_requests").insert({
+        book_id: bookId,
+        user_id: user?.id,
+        status: "pending",
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Request submitted!",
+        description: "Your book request has been submitted.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg">
-        <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Library className="w-10 h-10" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BookOpen className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h1 className="text-3xl font-bold">Library Management</h1>
-                <p className="text-primary-foreground/90 text-sm mt-1">
-                  Manage your book collection with ease
-                </p>
+                <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
+                <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
               </div>
             </div>
-            <AddBookDialog onAddBook={handleAddBook} />
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Stats */}
+      <main className="container mx-auto px-4 py-8">
         <LibraryStats books={books} />
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              placeholder="Search by title, author, or ISBN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+        <div className="mt-8 space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search by title, author, or ISBN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {userRole === "librarian" && <AddBookDialog onBookAdded={handleBookAdded} />}
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="borrowed">Borrowed</SelectItem>
-              <SelectItem value="late">Late</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Book Grid */}
-        {filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <Library className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              No books found
-            </h3>
-            <p className="text-muted-foreground">
-              {searchQuery || statusFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Start by adding your first book"}
-            </p>
-          </div>
-        )}
+          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 max-w-md">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="available">Available</TabsTrigger>
+              <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+              <TabsTrigger value="late">Late</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={statusFilter} className="mt-6">
+              {filteredBooks.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No books found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredBooks.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      onRequestBook={userRole === "student" ? handleRequestBook : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );
