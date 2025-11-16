@@ -7,6 +7,7 @@ import { BookOpen } from "lucide-react";
 interface BookCardProps {
   book: Book;
   onRequestBook?: (bookId: string) => void;
+  isLibrarian?: boolean;
 }
 
 const statusConfig = {
@@ -24,7 +25,7 @@ const statusConfig = {
   },
 };
 
-export function BookCard({ book, onRequestBook }: BookCardProps) {
+export function BookCard({ book, onRequestBook, isLibrarian = false }: BookCardProps) {
   const statusStyle = statusConfig[book.status];
 
   return (
@@ -57,14 +58,18 @@ export function BookCard({ book, onRequestBook }: BookCardProps) {
           </p>
         )}
       </CardContent>
-      {onRequestBook && book.status === "available" && (
+      {onRequestBook && (
         <CardFooter className="px-4 pb-4 pt-0">
-          <Button onClick={() => onRequestBook(book.id)} className="w-full">
-            Request Book
+          <Button 
+            onClick={() => onRequestBook(book.id)} 
+            className="w-full"
+            variant={book.status === "available" ? "default" : "outline"}
+          >
+            {book.status === "available" ? "Borrow Book" : "Join Queue"}
           </Button>
         </CardFooter>
       )}
-      {(book.borrowed_by || book.due_date) && (
+      {isLibrarian && (book.borrowed_by || book.due_date) && (
         <CardFooter className="px-4 pb-4 pt-0 text-xs text-muted-foreground">
           {book.borrowed_by && <p>Borrowed by: {book.borrowed_by}</p>}
           {book.due_date && <p>Due: {new Date(book.due_date).toLocaleDateString()}</p>}
