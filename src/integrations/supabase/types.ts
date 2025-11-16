@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           book_id: string
           id: string
+          queue_position: number | null
           requested_at: string | null
           status: string
           user_id: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           book_id: string
           id?: string
+          queue_position?: number | null
           requested_at?: string | null
           status?: string
           user_id: string
@@ -32,6 +34,7 @@ export type Database = {
         Update: {
           book_id?: string
           id?: string
+          queue_position?: number | null
           requested_at?: string | null
           status?: string
           user_id?: string
@@ -123,6 +126,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_next_queue_position: {
+        Args: { book_id_param: string }
+        Returns: number
+      }
+      handle_book_request: {
+        Args: { book_id_param: string; user_id_param: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
