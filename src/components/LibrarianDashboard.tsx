@@ -97,7 +97,55 @@ export function LibrarianDashboard() {
     }
   };
 
-  const handleAssignBook = async (bookId: string, userId: string, requestId: string) => {
+  const handleApproveRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("book_requests")
+        .update({ status: "approved" })
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Request approved",
+      });
+
+      fetchRequests();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("book_requests")
+        .delete()
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Request rejected",
+      });
+
+      fetchRequests();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleMarkAsTaken = async (bookId: string, userId: string, requestId: string) => {
     try {
       // Update book status
       const { error: bookError } = await supabase
@@ -111,17 +159,17 @@ export function LibrarianDashboard() {
 
       if (bookError) throw bookError;
 
-      // Update request status
+      // Delete the request
       const { error: requestError } = await supabase
         .from("book_requests")
-        .update({ status: "approved", queue_position: null })
+        .delete()
         .eq("id", requestId);
 
       if (requestError) throw requestError;
 
       toast({
         title: "Success",
-        description: "Book assigned successfully",
+        description: "Book marked as taken",
       });
 
       fetchRequests();
@@ -167,8 +215,20 @@ export function LibrarianDashboard() {
     }
   };
 
+  // Separate pending and approved requests
+  const pendingRequests = requests.filter(req => req.status === "pending");
+  const approvedRequests = requests.filter(req => req.status === "approved");
+
   // Group requests by book
-  const requestsByBook = requests.reduce((acc, request) => {
+  const pendingByBook = pendingRequests.reduce((acc, request) => {
+    if (!acc[request.book_id]) {
+      acc[request.book_id] = [];
+    }
+    acc[request.book_id].push(request);
+    return acc;
+  }, {} as Record<string, BookRequest[]>);
+
+  const approvedByBook = approvedRequests.reduce((acc, request) => {
     if (!acc[request.book_id]) {
       acc[request.book_id] = [];
     }
@@ -188,27 +248,48 @@ export function LibrarianDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {books.map((book) => (
-              <div key={book.id} className="flex items-center justify-between p-4 border rounded-lg gap-4">
-                <div className="flex-1">
-                  <p className="font-semibold">{book.title}</p>
-                  <p className="text-sm text-muted-foreground">by {book.author}</p>
-                  <Badge className="mt-1">
-                    {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
-                  </Badge>
+            {books.map((book) => {
+              const bookApprovedRequests = approvedByBook[book.id] || [];
+              return (
+                <div key={book.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1">
+                      <p className="font-semibold">{book.title}</p>
+                      <p className="text-sm text-muted-foreground">by {book.author}</p>
+                      <Badge className="mt-1">
+                        {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
+                      </Badge>
+                    </div>
+                    <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="borrowed">Borrowed</SelectItem>
+                        <SelectItem value="late">Late</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {bookApprovedRequests.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
+                      {bookApprovedRequests.map((request) => (
+                        <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <p className="text-sm">{request.profiles?.full_name}</p>
+                          <Button
+                            size="sm"
+                            onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                          >
+                            Mark as Taken
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="borrowed">Borrowed</SelectItem>
-                    <SelectItem value="late">Late</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -218,19 +299,18 @@ export function LibrarianDashboard() {
           <CardTitle>Request Queues</CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(requestsByBook).length === 0 ? (
+          {Object.keys(pendingByBook).length === 0 ? (
             <p className="text-muted-foreground">No pending requests</p>
           ) : (
             <div className="space-y-6">
-              {Object.entries(requestsByBook).map(([bookId, bookRequests]) => {
-                const book = books.find((b) => b.id === bookId);
+              {Object.entries(pendingByBook).map(([bookId, bookRequests]) => {
                 return (
                   <div key={bookId} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-3">
                       {bookRequests[0]?.books?.title} by {bookRequests[0]?.books?.author}
                     </h3>
                     <div className="space-y-2">
-                      {bookRequests.map((request, index) => (
+                      {bookRequests.map((request) => (
                         <div key={request.id} className="flex items-center justify-between p-3 bg-muted rounded">
                           <div className="flex items-center gap-3">
                             {request.queue_position && (
@@ -238,19 +318,24 @@ export function LibrarianDashboard() {
                             )}
                             <div>
                               <p className="font-medium">{request.profiles?.full_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {request.status === "pending" ? "Waiting in queue" : "Approved"}
-                              </p>
+                              <p className="text-xs text-muted-foreground">Pending approval</p>
                             </div>
                           </div>
-                          {request.status === "pending" && (
+                          <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleAssignBook(bookId, request.user_id, request.id)}
+                              variant="destructive"
+                              onClick={() => handleRejectRequest(request.id)}
                             >
-                              Assign Book
+                              Reject
                             </Button>
-                          )}
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveRequest(request.id)}
+                            >
+                              Approve
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

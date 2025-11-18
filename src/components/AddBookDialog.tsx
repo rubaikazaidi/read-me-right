@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Camera, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AddBookDialogProps {
   onBookAdded: () => void;
@@ -18,7 +19,11 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
   const [author, setAuthor] = useState("");
   const [isbn, setIsbn] = useState("");
   const [category, setCategory] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,12 +31,34 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
     setLoading(true);
 
     try {
+      let finalCoverUrl = coverUrl;
+
+      // Upload file if provided
+      if (coverFile) {
+        const fileExt = coverFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('book-covers')
+          .upload(filePath, coverFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('book-covers')
+          .getPublicUrl(filePath);
+
+        finalCoverUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("books").insert({
         title,
         author,
         isbn,
         category,
         status: "available",
+        cover_image_url: finalCoverUrl || null,
       });
 
       if (error) throw error;
@@ -45,6 +72,8 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
       setAuthor("");
       setIsbn("");
       setCategory("");
+      setCoverUrl("");
+      setCoverFile(null);
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
@@ -117,6 +146,49 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Book Cover</Label>
+            <Tabs defaultValue="url" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="url">
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  URL
+                </TabsTrigger>
+                <TabsTrigger value="upload">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </TabsTrigger>
+                <TabsTrigger value="camera">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Camera
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="url" className="space-y-2">
+                <Input
+                  placeholder="Enter image URL"
+                  value={coverUrl}
+                  onChange={(e) => setCoverUrl(e.target.value)}
+                />
+              </TabsContent>
+              <TabsContent value="upload" className="space-y-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+                />
+              </TabsContent>
+              <TabsContent value="camera" className="space-y-2">
+                <Input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Adding..." : "Add Book"}
