@@ -54,6 +54,7 @@ export type Database = {
           author: string
           borrowed_by: string | null
           category: string
+          cover_image_url: string | null
           created_at: string | null
           due_date: string | null
           id: string
@@ -65,6 +66,7 @@ export type Database = {
           author: string
           borrowed_by?: string | null
           category: string
+          cover_image_url?: string | null
           created_at?: string | null
           due_date?: string | null
           id?: string
@@ -76,6 +78,7 @@ export type Database = {
           author?: string
           borrowed_by?: string | null
           category?: string
+          cover_image_url?: string | null
           created_at?: string | null
           due_date?: string | null
           id?: string

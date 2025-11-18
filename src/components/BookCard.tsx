@@ -34,9 +34,17 @@ export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, use
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
         <div className="aspect-[2/3] overflow-hidden bg-muted relative">
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-            <BookOpen className="w-16 h-16 text-primary/40" />
-          </div>
+          {book.cover_image_url ? (
+            <img 
+              src={book.cover_image_url} 
+              alt={book.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <BookOpen className="w-16 h-16 text-primary/40" />
+            </div>
+          )}
           <Badge className={`absolute top-3 right-3 ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>

@@ -10,4 +10,5 @@ export interface Book {
   borrowed_by?: string | null;
   due_date?: string | null;
   created_at?: string;
+  cover_image_url?: string | null;
 }

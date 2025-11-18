@@ -114,21 +114,27 @@ const Index = () => {
   };
 
   const handleRequestBook = async (bookId: string) => {
+    if (!user) return;
+
     try {
-      const { data, error } = await supabase.rpc("handle_book_request", {
+      // Get next queue position
+      const { data: queuePos } = await supabase.rpc("get_next_queue_position", {
         book_id_param: bookId,
-        user_id_param: user?.id,
+      });
+
+      // Create request with pending status
+      const { error } = await supabase.from("book_requests").insert({
+        book_id: bookId,
+        user_id: user.id,
+        status: "pending",
+        queue_position: queuePos || 1,
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; message: string; queue_position: number | null };
-
       toast({
-        title: result.message,
-        description: result.queue_position 
-          ? `You are #${result.queue_position} in the queue`
-          : "You can pick up the book now!",
+        title: "Request Submitted",
+        description: `You are in queue position ${queuePos || 1}. Waiting for librarian approval.`,
       });
 
       fetchBooks();
