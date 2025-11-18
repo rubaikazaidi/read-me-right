@@ -190,6 +190,14 @@ export function LibrarianDashboard() {
       if (newStatus === "available") {
         updates.borrowed_by = null;
         updates.due_date = null;
+        
+        // Clear all book requests when book is made available
+        const { error: requestsError } = await supabase
+          .from("book_requests")
+          .delete()
+          .eq("book_id", bookId);
+
+        if (requestsError) throw requestsError;
       }
 
       const { error } = await supabase
@@ -201,7 +209,7 @@ export function LibrarianDashboard() {
 
       toast({
         title: "Success",
-        description: "Book status updated",
+        description: newStatus === "available" ? "Book marked as available and queue cleared" : "Book status updated",
       });
 
       fetchBooks();
