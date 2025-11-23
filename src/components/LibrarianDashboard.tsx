@@ -83,11 +83,14 @@ export function LibrarianDashboard() {
     try {
       const { data, error } = await supabase
         .from("books")
-        .select("*")
+        .select(`
+          *,
+          borrower:borrowed_by (full_name)
+        `)
         .order("title");
 
       if (error) throw error;
-      setBooks(data as Book[] || []);
+      setBooks(data as any[] || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -147,13 +150,15 @@ export function LibrarianDashboard() {
 
   const handleMarkAsTaken = async (bookId: string, userId: string, requestId: string) => {
     try {
-      // Update book status
+      const now = new Date();
+      // Update book status with 7 days due date
       const { error: bookError } = await supabase
         .from("books")
         .update({
           status: "borrowed",
           borrowed_by: userId,
-          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          borrowed_at: now.toISOString(),
+          due_date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq("id", bookId);
 
@@ -183,12 +188,51 @@ export function LibrarianDashboard() {
     }
   };
 
+  const handleMarkAsReturned = async (bookId: string) => {
+    try {
+      const { error } = await supabase
+        .from("books")
+        .update({
+          status: "available",
+          borrowed_by: null,
+          borrowed_at: null,
+          due_date: null,
+        })
+        .eq("id", bookId);
+
+      if (error) throw error;
+
+      // Clear all book requests when book is returned
+      const { error: requestsError } = await supabase
+        .from("book_requests")
+        .delete()
+        .eq("book_id", bookId);
+
+      if (requestsError) throw requestsError;
+
+      toast({
+        title: "Success",
+        description: "Book marked as returned and is now available",
+      });
+
+      fetchBooks();
+      fetchRequests();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   const handleUpdateBookStatus = async (bookId: string, newStatus: string) => {
     try {
       const updates: any = { status: newStatus };
       
       if (newStatus === "available") {
         updates.borrowed_by = null;
+        updates.borrowed_at = null;
         updates.due_date = null;
         
         // Clear all book requests when book is made available
@@ -267,17 +311,46 @@ export function LibrarianDashboard() {
                       <Badge className="mt-1">
                         {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
                       </Badge>
+                      
+                      {/* Show borrower details for borrowed books */}
+                      {(book.status === "borrowed" || book.status === "late") && book.borrowed_by && (
+                        <div className="mt-3 p-3 bg-muted/50 rounded-md space-y-1">
+                          <p className="text-sm">
+                            <span className="font-medium">Borrowed by:</span> {(book as any).borrower?.full_name || "Unknown"}
+                          </p>
+                          {book.borrowed_at && (
+                            <p className="text-sm">
+                              <span className="font-medium">Borrowed on:</span> {new Date(book.borrowed_at).toLocaleDateString()}
+                            </p>
+                          )}
+                          {book.due_date && (
+                            <p className="text-sm">
+                              <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="available">Available</SelectItem>
-                        <SelectItem value="borrowed">Borrowed</SelectItem>
-                        <SelectItem value="late">Late</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      {(book.status === "borrowed" || book.status === "late") && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleMarkAsReturned(book.id)}
+                        >
+                          Mark as Returned
+                        </Button>
+                      )}
+                      <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">Available</SelectItem>
+                          <SelectItem value="borrowed">Borrowed</SelectItem>
+                          <SelectItem value="late">Late</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   {bookApprovedRequests.length > 0 && (
                     <div className="mt-3 space-y-2">
