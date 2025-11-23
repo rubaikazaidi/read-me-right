@@ -59,6 +59,7 @@ export type Database = {
       books: {
         Row: {
           author: string
+          borrowed_at: string | null
           borrowed_by: string | null
           category: string
           cover_image_url: string | null
@@ -71,6 +72,7 @@ export type Database = {
         }
         Insert: {
           author: string
+          borrowed_at?: string | null
           borrowed_by?: string | null
           category: string
           cover_image_url?: string | null
@@ -83,6 +85,7 @@ export type Database = {
         }
         Update: {
           author?: string
+          borrowed_at?: string | null
           borrowed_by?: string | null
           category?: string
           cover_image_url?: string | null
