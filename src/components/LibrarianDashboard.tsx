@@ -60,8 +60,8 @@ export function LibrarianDashboard() {
         .from("book_requests")
         .select(`
           *,
-          profiles!book_requests_user_id_fkey (full_name),
-          books!book_requests_book_id_fkey (title, author)
+          profiles:user_id (full_name),
+          books:book_id (title, author)
         `)
         .order("book_id")
         .order("queue_position", { ascending: true, nullsFirst: false });
