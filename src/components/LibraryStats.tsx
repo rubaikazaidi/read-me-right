@@ -3,9 +3,11 @@ import { BookOpen, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface LibraryStatsProps {
   books: Book[];
+  onFilterChange?: (filter: string) => void;
+  activeFilter?: string;
 }
 
-export function LibraryStats({ books }: LibraryStatsProps) {
+export function LibraryStats({ books, onFilterChange, activeFilter }: LibraryStatsProps) {
   const totalBooks = books.length;
   const availableBooks = books.filter((b) => b.status === "available").length;
   const borrowedBooks = books.filter((b) => b.status === "borrowed").length;
@@ -18,6 +20,7 @@ export function LibraryStats({ books }: LibraryStatsProps) {
       icon: BookOpen,
       color: "text-primary",
       bgColor: "bg-primary/10",
+      filter: "all",
     },
     {
       label: "Available",
@@ -25,6 +28,7 @@ export function LibraryStats({ books }: LibraryStatsProps) {
       icon: CheckCircle2,
       color: "text-status-available",
       bgColor: "bg-status-available/10",
+      filter: "available",
     },
     {
       label: "Borrowed",
@@ -32,6 +36,7 @@ export function LibraryStats({ books }: LibraryStatsProps) {
       icon: Clock,
       color: "text-status-borrowed",
       bgColor: "bg-status-borrowed/10",
+      filter: "borrowed",
     },
     {
       label: "Late",
@@ -39,6 +44,7 @@ export function LibraryStats({ books }: LibraryStatsProps) {
       icon: AlertCircle,
       color: "text-status-late",
       bgColor: "bg-status-late/10",
+      filter: "late",
     },
   ];
 
@@ -46,10 +52,14 @@ export function LibraryStats({ books }: LibraryStatsProps) {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
+        const isActive = activeFilter === stat.filter;
         return (
           <div
             key={stat.label}
-            className="bg-card rounded-lg p-6 shadow-sm border border-border transition-all hover:shadow-md"
+            onClick={() => onFilterChange?.(stat.filter)}
+            className={`bg-card rounded-lg p-6 shadow-sm border transition-all hover:shadow-md cursor-pointer ${
+              isActive ? "ring-2 ring-primary border-primary" : "border-border"
+            }`}
           >
             <div className="flex items-center gap-3">
               <div className={`p-3 rounded-lg ${stat.bgColor}`}>
