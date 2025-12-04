@@ -6,6 +6,7 @@ import { Book } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { EditBookDialog } from "@/components/EditBookDialog";
+import { BookDetailsDialog } from "@/components/BookDetailsDialog";
 import { LibraryStats } from "@/components/LibraryStats";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [userRequests, setUserRequests] = useState<Record<string, { status: string; queue_position: number | null }>>({});
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [viewingBook, setViewingBook] = useState<Book | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -235,6 +237,7 @@ const Index = () => {
                             book={book} 
                             isLibrarian={true}
                             onEdit={() => setEditingBook(book)}
+                            onViewDetails={() => setViewingBook(book)}
                           />
                         ))}
                       </div>
@@ -289,6 +292,12 @@ const Index = () => {
           onBookUpdated={handleBookUpdated}
         />
       )}
+
+      <BookDetailsDialog
+        book={viewingBook}
+        open={!!viewingBook}
+        onOpenChange={(open) => !open && setViewingBook(null)}
+      />
     </div>
   );
 };

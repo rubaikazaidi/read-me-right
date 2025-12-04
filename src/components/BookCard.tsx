@@ -9,6 +9,7 @@ interface BookCardProps {
   onRequestBook?: (bookId: string) => void;
   isLibrarian?: boolean;
   onEdit?: () => void;
+  onViewDetails?: () => void;
   userRequest?: { status: string; queue_position: number | null } | null;
 }
 
@@ -27,11 +28,14 @@ const statusConfig = {
   },
 };
 
-export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, userRequest }: BookCardProps) {
+export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, onViewDetails, userRequest }: BookCardProps) {
   const statusStyle = statusConfig[book.status];
 
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+    <Card 
+      className={`group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${isLibrarian ? 'cursor-pointer' : ''}`}
+      onClick={isLibrarian && onViewDetails ? onViewDetails : undefined}
+    >
       <CardHeader className="p-0">
         <div className="aspect-[2/3] overflow-hidden bg-muted relative">
           {book.cover_image_url ? (
@@ -53,7 +57,7 @@ export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, use
               variant="secondary"
               size="sm"
               className="absolute top-3 left-3"
-              onClick={onEdit}
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
             >
               <Pencil className="w-4 h-4" />
             </Button>
