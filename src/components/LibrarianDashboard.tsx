@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Book } from "@/types/book";
+import { Book, BookStatus } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 
 interface BookRequest {
@@ -23,9 +23,13 @@ interface BookRequest {
   };
 }
 
+interface BookWithBorrower extends Book {
+  borrower_name?: string;
+}
+
 export function LibrarianDashboard() {
   const [requests, setRequests] = useState<BookRequest[]>([]);
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<BookWithBorrower[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -81,16 +85,43 @@ export function LibrarianDashboard() {
 
   const fetchBooks = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch books without the join that was causing the error
+      const { data: booksData, error: booksError } = await supabase
         .from("books")
-        .select(`
-          *,
-          borrower:borrowed_by (full_name)
-        `)
+        .select("*")
         .order("title");
 
-      if (error) throw error;
-      setBooks(data as any[] || []);
+      if (booksError) throw booksError;
+
+      // Get borrower names for borrowed books
+      const borrowedByIds = (booksData || [])
+        .filter(book => book.borrowed_by)
+        .map(book => book.borrowed_by);
+
+      let borrowerMap: Record<string, string> = {};
+      
+      if (borrowedByIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", borrowedByIds);
+
+        if (profilesData) {
+          borrowerMap = profilesData.reduce((acc, profile) => {
+            acc[profile.id] = profile.full_name;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
+      // Combine books with borrower names
+      const booksWithBorrowers: BookWithBorrower[] = (booksData || []).map(book => ({
+        ...book,
+        status: book.status as BookStatus,
+        borrower_name: book.borrowed_by ? borrowerMap[book.borrowed_by] : undefined
+      }));
+
+      setBooks(booksWithBorrowers);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -267,6 +298,19 @@ export function LibrarianDashboard() {
     }
   };
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "available":
+        return "default";
+      case "borrowed":
+        return "secondary";
+      case "late":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
   // Separate pending and approved requests
   const pendingRequests = requests.filter(req => req.status === "pending");
   const approvedRequests = requests.filter(req => req.status === "approved");
@@ -299,79 +343,87 @@ export function LibrarianDashboard() {
           <CardTitle>Book Status Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {books.map((book) => {
-              const bookApprovedRequests = approvedByBook[book.id] || [];
-              return (
-                <div key={book.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex-1">
-                      <p className="font-semibold">{book.title}</p>
-                      <p className="text-sm text-muted-foreground">by {book.author}</p>
-                      <Badge className="mt-1">
-                        {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
-                      </Badge>
-                      
-                      {/* Show borrower details for borrowed books */}
-                      {(book.status === "borrowed" || book.status === "late") && book.borrowed_by && (
-                        <div className="mt-3 p-3 bg-muted/50 rounded-md space-y-1">
-                          <p className="text-sm">
-                            <span className="font-medium">Borrowed by:</span> {(book as any).borrower?.full_name || "Unknown"}
-                          </p>
-                          {book.borrowed_at && (
-                            <p className="text-sm">
-                              <span className="font-medium">Borrowed on:</span> {new Date(book.borrowed_at).toLocaleDateString()}
-                            </p>
-                          )}
-                          {book.due_date && (
-                            <p className="text-sm">
-                              <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
-                            </p>
-                          )}
+          {books.length === 0 ? (
+            <p className="text-muted-foreground">No books in the library</p>
+          ) : (
+            <div className="space-y-4">
+              {books.map((book) => {
+                const bookApprovedRequests = approvedByBook[book.id] || [];
+                return (
+                  <div key={book.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <p className="font-semibold">{book.title}</p>
+                          <Badge variant={getStatusBadgeVariant(book.status)}>
+                            {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
+                          </Badge>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      {(book.status === "borrowed" || book.status === "late") && (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleMarkAsReturned(book.id)}
-                        >
-                          Mark as Returned
-                        </Button>
-                      )}
-                      <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="available">Available</SelectItem>
-                          <SelectItem value="borrowed">Borrowed</SelectItem>
-                          <SelectItem value="late">Late</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {bookApprovedRequests.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
-                      {bookApprovedRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <p className="text-sm">{request.profiles?.full_name}</p>
+                        <p className="text-sm text-muted-foreground">by {book.author}</p>
+                        <p className="text-xs text-muted-foreground">ISBN: {book.isbn} • Category: {book.category}</p>
+                        
+                        {/* Show borrower details for borrowed books */}
+                        {(book.status === "borrowed" || book.status === "late") && book.borrowed_by && (
+                          <div className="mt-3 p-3 bg-muted/50 rounded-md space-y-1">
+                            <p className="text-sm">
+                              <span className="font-medium">Borrowed by:</span> {book.borrower_name || "Unknown"}
+                            </p>
+                            {book.borrowed_at && (
+                              <p className="text-sm">
+                                <span className="font-medium">Borrowed on:</span> {new Date(book.borrowed_at).toLocaleDateString()}
+                              </p>
+                            )}
+                            {book.due_date && (
+                              <p className="text-sm">
+                                <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        {(book.status === "borrowed" || book.status === "late") && (
                           <Button
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                            onClick={() => handleMarkAsReturned(book.id)}
                           >
-                            Mark as Taken
+                            Mark as Returned
                           </Button>
-                        </div>
-                      ))}
+                        )}
+                        <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="borrowed">Borrowed</SelectItem>
+                            <SelectItem value="late">Late</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {bookApprovedRequests.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
+                        {bookApprovedRequests.map((request) => (
+                          <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <p className="text-sm">{request.profiles?.full_name}</p>
+                            <Button
+                              size="sm"
+                              onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                            >
+                              Mark as Taken
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
