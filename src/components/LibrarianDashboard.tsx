@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Book, BookStatus } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
+import { AssignBookDialog } from "./AssignBookDialog";
 
 interface BookRequest {
   id: string;
@@ -31,6 +32,8 @@ export function LibrarianDashboard() {
   const [requests, setRequests] = useState<BookRequest[]>([]);
   const [books, setBooks] = useState<BookWithBorrower[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [bookToAssign, setBookToAssign] = useState<BookWithBorrower | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -249,7 +252,14 @@ export function LibrarianDashboard() {
     }
   };
 
-  const handleUpdateBookStatus = async (bookId: string, newStatus: string) => {
+  const handleUpdateBookStatus = async (bookId: string, newStatus: string, book?: BookWithBorrower) => {
+    // If changing to borrowed, open the assign dialog
+    if (newStatus === "borrowed" && book && book.status !== "borrowed") {
+      setBookToAssign(book);
+      setAssignDialogOpen(true);
+      return;
+    }
+
     try {
       const updates: any = { status: newStatus };
       
@@ -280,6 +290,12 @@ export function LibrarianDashboard() {
         description: error.message,
       });
     }
+  };
+
+  const handleAssignComplete = () => {
+    fetchBooks();
+    fetchRequests();
+    setBookToAssign(null);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -388,7 +404,7 @@ export function LibrarianDashboard() {
                             Mark as Returned
                           </Button>
                         )}
-                        <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value)}>
+                        <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value, book)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
@@ -476,6 +492,15 @@ export function LibrarianDashboard() {
           )}
         </CardContent>
       </Card>
+      {bookToAssign && (
+        <AssignBookDialog
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+          bookId={bookToAssign.id}
+          bookTitle={bookToAssign.title}
+          onAssigned={handleAssignComplete}
+        />
+      )}
     </div>
   );
 }
