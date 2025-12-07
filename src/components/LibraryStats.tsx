@@ -5,9 +5,10 @@ interface LibraryStatsProps {
   books: Book[];
   onFilterChange?: (filter: string) => void;
   activeFilter?: string;
+  userRole?: string;
 }
 
-export function LibraryStats({ books, onFilterChange, activeFilter }: LibraryStatsProps) {
+export function LibraryStats({ books, onFilterChange, activeFilter, userRole }: LibraryStatsProps) {
   const totalBooks = books.length;
   const availableBooks = books.filter((b) => b.status === "available").length;
   const borrowedBooks = books.filter((b) => b.status === "borrowed").length;
@@ -48,9 +49,13 @@ export function LibraryStats({ books, onFilterChange, activeFilter }: LibrarySta
     },
   ];
 
+  const visibleStats = userRole === "student" 
+    ? stats.filter((stat) => stat.filter !== "late") 
+    : stats;
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => {
+    <div className={`grid grid-cols-2 ${userRole === "student" ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-4`}>
+      {visibleStats.map((stat) => {
         const Icon = stat.icon;
         const isActive = activeFilter === stat.filter;
         return (
