@@ -233,14 +233,6 @@ export function LibrarianDashboard() {
 
       if (error) throw error;
 
-      // Clear all book requests when book is returned
-      const { error: requestsError } = await supabase
-        .from("book_requests")
-        .delete()
-        .eq("book_id", bookId);
-
-      if (requestsError) throw requestsError;
-
       toast({
         title: "Success",
         description: "Book marked as returned and is now available",
@@ -265,14 +257,6 @@ export function LibrarianDashboard() {
         updates.borrowed_by = null;
         updates.borrowed_at = null;
         updates.due_date = null;
-        
-        // Clear all book requests when book is made available
-        const { error: requestsError } = await supabase
-          .from("book_requests")
-          .delete()
-          .eq("book_id", bookId);
-
-        if (requestsError) throw requestsError;
       }
 
       const { error } = await supabase
@@ -284,7 +268,7 @@ export function LibrarianDashboard() {
 
       toast({
         title: "Success",
-        description: newStatus === "available" ? "Book marked as available and queue cleared" : "Book status updated",
+        description: "Book status updated",
       });
 
       fetchBooks();
@@ -308,6 +292,19 @@ export function LibrarianDashboard() {
         return "destructive";
       default:
         return "outline";
+    }
+  };
+
+  const getStatusBackgroundClass = (status: string) => {
+    switch (status) {
+      case "available":
+        return "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800";
+      case "borrowed":
+        return "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800";
+      case "late":
+        return "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800";
+      default:
+        return "";
     }
   };
 
@@ -350,7 +347,7 @@ export function LibrarianDashboard() {
               {books.map((book) => {
                 const bookApprovedRequests = approvedByBook[book.id] || [];
                 return (
-                  <div key={book.id} className="border rounded-lg p-4">
+                  <div key={book.id} className={`border rounded-lg p-4 ${getStatusBackgroundClass(book.status)}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
