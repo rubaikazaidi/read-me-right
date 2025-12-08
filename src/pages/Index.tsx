@@ -230,7 +230,7 @@ const Index = () => {
                         <p className="text-muted-foreground">No books found</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {filteredBooks.map((book) => (
                           <BookCard 
                             key={book.id} 
@@ -266,7 +266,7 @@ const Index = () => {
                     <p className="text-muted-foreground">No books found</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {filteredBooks.map((book) => (
                       <BookCard
                         key={book.id}

@@ -46,71 +46,67 @@ export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, onV
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-              <BookOpen className="w-16 h-16 text-primary/40" />
+              <BookOpen className="w-10 h-10 text-primary/40" />
             </div>
           )}
-          <Badge className={`absolute top-3 right-3 ${statusStyle.className}`}>
+          <Badge className={`absolute top-2 right-2 text-xs ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
           {onEdit && (
             <Button
               variant="secondary"
-              size="sm"
-              className="absolute top-3 left-3"
+              size="icon"
+              className="absolute top-2 left-2 h-6 w-6"
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="w-3 h-3" />
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg line-clamp-2 mb-1 text-foreground">
+      <CardContent className="p-3">
+        <h3 className="font-semibold text-sm line-clamp-2 mb-1 text-foreground">
           {book.title}
         </h3>
-        <p className="text-sm text-muted-foreground line-clamp-1">
+        <p className="text-xs text-muted-foreground line-clamp-1">
           by {book.author}
         </p>
-        {book.isbn && (
-          <p className="text-xs text-muted-foreground mt-2">
-            ISBN: {book.isbn}
-          </p>
-        )}
         {book.category && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Category: {book.category}
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+            {book.category}
           </p>
         )}
       </CardContent>
       {onRequestBook && !userRequest && (
-        <CardFooter className="px-4 pb-4 pt-0">
+        <CardFooter className="px-3 pb-3 pt-0">
           <Button 
             onClick={() => onRequestBook(book.id)} 
-            className="w-full"
+            className="w-full text-xs h-8"
+            size="sm"
             variant={book.status === "available" ? "default" : "outline"}
           >
-            {book.status === "available" ? "Borrow Book" : "Join Queue"}
+            {book.status === "available" ? "Borrow" : "Join Queue"}
           </Button>
         </CardFooter>
       )}
       {userRequest && (
-        <CardFooter className="px-4 pb-4 pt-0">
-          <div className="w-full text-center p-3 bg-muted rounded-md">
-            <p className="text-sm font-medium">
+        <CardFooter className="px-3 pb-3 pt-0">
+          <div className="w-full text-center p-2 bg-muted rounded-md">
+            <p className="text-xs font-medium">
               {userRequest.status === "approved" ? (
-                "✓ Book Borrowed"
+                "✓ Borrowed"
               ) : userRequest.queue_position ? (
-                <>In Queue: Position #{userRequest.queue_position}</>
+                <>Queue #{userRequest.queue_position}</>
               ) : (
-                "Request Pending"
+                "Pending"
               )}
             </p>
           </div>
         </CardFooter>
       )}
       {isLibrarian && (book.borrowed_by || book.due_date) && (
-        <CardFooter className="px-4 pb-4 pt-0 text-xs text-muted-foreground">
-          {book.borrowed_by && <p>Borrowed by: {book.borrowed_by}</p>}
+        <CardFooter className="px-3 pb-3 pt-0 text-xs text-muted-foreground flex-col items-start">
+          {book.borrowed_by && <p className="line-clamp-1">By: {book.borrowed_by}</p>}
           {book.due_date && <p>Due: {new Date(book.due_date).toLocaleDateString()}</p>}
         </CardFooter>
       )}
