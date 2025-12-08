@@ -34,7 +34,32 @@ export function LibrarianDashboard() {
   const [loading, setLoading] = useState(true);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [bookToAssign, setBookToAssign] = useState<BookWithBorrower | null>(null);
+  const [bookSortBy, setBookSortBy] = useState<string>("title-asc");
   const { toast } = useToast();
+
+  // Sort books based on selected criteria
+  const sortedBooks = [...books].sort((a, b) => {
+    switch (bookSortBy) {
+      case "title-asc":
+        return a.title.localeCompare(b.title);
+      case "title-desc":
+        return b.title.localeCompare(a.title);
+      case "author":
+        return a.author.localeCompare(b.author);
+      case "date-new":
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      case "date-old":
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      case "status-late":
+        const statusOrder = { late: 0, borrowed: 1, available: 2 };
+        return (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
+      case "status-available":
+        const statusOrderAvail = { available: 0, borrowed: 1, late: 2 };
+        return (statusOrderAvail[a.status] || 2) - (statusOrderAvail[b.status] || 2);
+      default:
+        return 0;
+    }
+  });
 
   useEffect(() => {
     fetchRequests();
@@ -373,14 +398,30 @@ export function LibrarianDashboard() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Book Status Management</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Book Status Management</CardTitle>
+            <Select value={bookSortBy} onValueChange={setBookSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                <SelectItem value="author">By Author</SelectItem>
+                <SelectItem value="date-new">Recently Added</SelectItem>
+                <SelectItem value="date-old">Oldest First</SelectItem>
+                <SelectItem value="status-late">Status: Late First</SelectItem>
+                <SelectItem value="status-available">Status: Available First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {books.length === 0 ? (
             <p className="text-muted-foreground">No books in the library</p>
           ) : (
             <div className="space-y-4">
-              {books.map((book) => {
+              {sortedBooks.map((book) => {
                 const bookApprovedRequests = approvedByBook[book.id] || [];
                 return (
                   <div key={book.id} className={`border rounded-lg p-4 ${getStatusBackgroundClass(book.status)}`}>
