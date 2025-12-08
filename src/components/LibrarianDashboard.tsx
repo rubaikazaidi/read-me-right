@@ -96,6 +96,23 @@ export function LibrarianDashboard() {
 
       if (booksError) throw booksError;
 
+      const now = new Date();
+      
+      // Check for overdue books and update their status to "late"
+      const overdueBooks = (booksData || []).filter(book => 
+        book.status === "borrowed" && 
+        book.due_date && 
+        new Date(book.due_date) < now
+      );
+
+      // Update overdue books to "late" status
+      for (const book of overdueBooks) {
+        await supabase
+          .from("books")
+          .update({ status: "late" })
+          .eq("id", book.id);
+      }
+
       // Get borrower names for borrowed books
       const borrowedByIds = (booksData || [])
         .filter(book => book.borrowed_by)
@@ -117,12 +134,15 @@ export function LibrarianDashboard() {
         }
       }
 
-      // Combine books with borrower names
-      const booksWithBorrowers: BookWithBorrower[] = (booksData || []).map(book => ({
-        ...book,
-        status: book.status as BookStatus,
-        borrower_name: book.borrowed_by ? borrowerMap[book.borrowed_by] : undefined
-      }));
+      // Combine books with borrower names, updating status for overdue books
+      const booksWithBorrowers: BookWithBorrower[] = (booksData || []).map(book => {
+        const isOverdue = book.status === "borrowed" && book.due_date && new Date(book.due_date) < now;
+        return {
+          ...book,
+          status: isOverdue ? "late" as BookStatus : book.status as BookStatus,
+          borrower_name: book.borrowed_by ? borrowerMap[book.borrowed_by] : undefined
+        };
+      });
 
       setBooks(booksWithBorrowers);
     } catch (error: any) {
