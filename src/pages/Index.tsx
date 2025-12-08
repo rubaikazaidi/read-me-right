@@ -12,7 +12,8 @@ import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, BookOpen, LogOut } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, BookOpen, LogOut, ArrowUpDown } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +25,7 @@ const Index = () => {
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
   const [loading, setLoading] = useState(true);
   const [userRequests, setUserRequests] = useState<Record<string, { status: string; queue_position: number | null }>>({});
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -103,8 +105,26 @@ const Index = () => {
       filtered = filtered.filter((book) => book.status === statusFilter);
     }
 
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "title-asc":
+          return a.title.localeCompare(b.title);
+        case "title-desc":
+          return b.title.localeCompare(a.title);
+        case "author":
+          return a.author.localeCompare(b.author);
+        case "newest":
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        case "oldest":
+          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+        default:
+          return 0;
+      }
+    });
+
     setFilteredBooks(filtered);
-  }, [searchTerm, statusFilter, books]);
+  }, [searchTerm, statusFilter, books, sortBy]);
 
   const handleBookAdded = () => {
     fetchBooks();
@@ -216,12 +236,27 @@ const Index = () => {
 
               <TabsContent value="books" className="mt-6">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 max-w-md mb-6">
-                    <TabsTrigger value="all">All</TabsTrigger>
-                    <TabsTrigger value="available">Available</TabsTrigger>
-                    <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
-                    <TabsTrigger value="late">Late</TabsTrigger>
-                  </TabsList>
+                  <div className="flex items-center justify-between mb-6">
+                    <TabsList className="grid w-full grid-cols-4 max-w-md">
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      <TabsTrigger value="available">Available</TabsTrigger>
+                      <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+                      <TabsTrigger value="late">Late</TabsTrigger>
+                    </TabsList>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[180px] ml-4">
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                        <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                        <SelectItem value="author">By Author</SelectItem>
+                        <SelectItem value="newest">Recently Added</SelectItem>
+                        <SelectItem value="oldest">Oldest First</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <TabsContent value={statusFilter}>
                     {filteredBooks.length === 0 ? (
@@ -252,12 +287,27 @@ const Index = () => {
             </Tabs>
           ) : (
             <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 max-w-md">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="available">Available</TabsTrigger>
-                <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
-                <TabsTrigger value="late">Late</TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between mb-6">
+                <TabsList className="grid w-full grid-cols-4 max-w-md">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="available">Available</TabsTrigger>
+                  <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+                  <TabsTrigger value="late">Late</TabsTrigger>
+                </TabsList>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[180px] ml-4">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                    <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                    <SelectItem value="author">By Author</SelectItem>
+                    <SelectItem value="newest">Recently Added</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <TabsContent value={statusFilter} className="mt-6">
                 {filteredBooks.length === 0 ? (
