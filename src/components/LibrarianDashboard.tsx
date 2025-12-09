@@ -455,7 +455,7 @@ export function LibrarianDashboard() {
                             )}
                             {book.status === "late" && book.due_date && (
                               <p className="text-sm text-destructive font-semibold">
-                                <span className="font-medium">Late Fine:</span> ${calculateFine(book.due_date).toFixed(2)}
+                                <span className="font-medium">Late Fine:</span> ₹{calculateFine(book.due_date).toFixed(2)}
                               </p>
                             )}
                           </div>

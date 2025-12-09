@@ -111,10 +111,10 @@ export function FineSettingsDialog() {
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-sm font-medium mb-1">Example Calculation:</p>
             <p className="text-xs text-muted-foreground">
-              If a book is 3 days late with first day fine of ${parseFloat(firstDayFine) || 0} and additional day fine of ${parseFloat(additionalDayFine) || 0}:
+              If a book is 3 days late with first day fine of ₹{parseFloat(firstDayFine) || 0} and additional day fine of ₹{parseFloat(additionalDayFine) || 0}:
             </p>
             <p className="text-sm font-semibold mt-1">
-              Total Fine: ${((parseFloat(firstDayFine) || 0) + 2 * (parseFloat(additionalDayFine) || 0)).toFixed(2)}
+              Total Fine: ₹{((parseFloat(firstDayFine) || 0) + 2 * (parseFloat(additionalDayFine) || 0)).toFixed(2)}
             </p>
           </div>
         </div>
