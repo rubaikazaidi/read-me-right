@@ -14,7 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { format } from "date-fns";
 
 import { useToast } from "@/hooks/use-toast";
 
@@ -292,50 +294,100 @@ const Index = () => {
               </TabsContent>
             </Tabs>
           ) : (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <div className="flex items-center justify-between mb-6">
-                <TabsList className="grid w-full grid-cols-4 max-w-md">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="available">Available</TabsTrigger>
-                  <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
-                  <TabsTrigger value="late">Late</TabsTrigger>
-                </TabsList>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[180px] ml-4">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="title-asc">Title: A-Z</SelectItem>
-                    <SelectItem value="title-desc">Title: Z-A</SelectItem>
-                    <SelectItem value="author">By Author</SelectItem>
-                    <SelectItem value="newest">Recently Added</SelectItem>
-                    <SelectItem value="oldest">Oldest First</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <>
+              {/* My Borrowed Books Section for Students */}
+              {(() => {
+                const myBorrowedBooks = books.filter(
+                  (book) => book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late")
+                );
+                if (myBorrowedBooks.length === 0) return null;
+                return (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      My Borrowed Books
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myBorrowedBooks.map((book) => (
+                        <Card key={book.id} className={`overflow-hidden ${book.status === "late" ? "border-destructive" : ""}`}>
+                          <CardContent className="p-4 flex gap-4">
+                            {book.cover_image_url ? (
+                              <img
+                                src={book.cover_image_url}
+                                alt={book.title}
+                                className="w-16 h-24 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-16 h-24 bg-muted rounded flex items-center justify-center">
+                                <BookOpen className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold truncate">{book.title}</h3>
+                              <p className="text-sm text-muted-foreground truncate">{book.author}</p>
+                              {book.due_date && (
+                                <div className={`mt-2 flex items-center gap-1 text-sm ${book.status === "late" ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                                  <Calendar className="h-4 w-4" />
+                                  <span>
+                                    {book.status === "late" ? "Overdue: " : "Due: "}
+                                    {format(new Date(book.due_date), "MMM d, yyyy")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
-              <TabsContent value={statusFilter} className="mt-6">
-                {filteredBooks.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No books found</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredBooks.map((book) => (
-                      <BookCard
-                        key={book.id}
-                        book={book}
-                        onRequestBook={handleRequestBook}
-                        isLibrarian={false}
-                        userRequest={userRequests[book.id] || null}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <div className="flex items-center justify-between mb-6">
+                  <TabsList className="grid w-full grid-cols-4 max-w-md">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="available">Available</TabsTrigger>
+                    <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
+                    <TabsTrigger value="late">Late</TabsTrigger>
+                  </TabsList>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-[180px] ml-4">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                      <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                      <SelectItem value="author">By Author</SelectItem>
+                      <SelectItem value="newest">Recently Added</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <TabsContent value={statusFilter} className="mt-6">
+                  {filteredBooks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No books found</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {filteredBooks.map((book) => (
+                        <BookCard
+                          key={book.id}
+                          book={book}
+                          onRequestBook={handleRequestBook}
+                          isLibrarian={false}
+                          userRequest={userRequests[book.id] || null}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </>
           )}
         </div>
       </main>
