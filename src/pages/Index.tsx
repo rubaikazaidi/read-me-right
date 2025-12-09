@@ -9,6 +9,7 @@ import { EditBookDialog } from "@/components/EditBookDialog";
 import { BookDetailsDialog } from "@/components/BookDetailsDialog";
 import { LibraryStats } from "@/components/LibraryStats";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
+import { FineSettingsDialog } from "@/components/FineSettingsDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -224,7 +225,12 @@ const Index = () => {
                 className="pl-10"
               />
             </div>
-            {userRole === "librarian" && <AddBookDialog onBookAdded={handleBookAdded} />}
+            {userRole === "librarian" && (
+              <div className="flex gap-2">
+                <FineSettingsDialog />
+                <AddBookDialog onBookAdded={handleBookAdded} />
+              </div>
+            )}
           </div>
 
           {userRole === "librarian" ? (
