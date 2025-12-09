@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Book, BookStatus } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { AssignBookDialog } from "./AssignBookDialog";
+import { calculateFine } from "./FineSettingsDialog";
 
 interface BookRequest {
   id: string;
@@ -450,6 +451,11 @@ export function LibrarianDashboard() {
                             {book.due_date && (
                               <p className="text-sm">
                                 <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
+                              </p>
+                            )}
+                            {book.status === "late" && book.due_date && (
+                              <p className="text-sm text-destructive font-semibold">
+                                <span className="font-medium">Late Fine:</span> ${calculateFine(book.due_date).toFixed(2)}
                               </p>
                             )}
                           </div>
