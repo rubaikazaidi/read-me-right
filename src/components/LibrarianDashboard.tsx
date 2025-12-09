@@ -51,11 +51,11 @@ export function LibrarianDashboard() {
       case "date-old":
         return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
       case "status-late":
-        const statusOrder = { late: 0, borrowed: 1, available: 2 };
-        return (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
+        const statusOrderLate: Record<string, number> = { late: 0, borrowed: 1, available: 2 };
+        return (statusOrderLate[a.status] ?? 2) - (statusOrderLate[b.status] ?? 2);
       case "status-available":
-        const statusOrderAvail = { available: 0, borrowed: 1, late: 2 };
-        return (statusOrderAvail[a.status] || 2) - (statusOrderAvail[b.status] || 2);
+        const statusOrderAvail: Record<string, number> = { available: 0, borrowed: 1, late: 2 };
+        return (statusOrderAvail[a.status] ?? 2) - (statusOrderAvail[b.status] ?? 2);
       default:
         return 0;
     }
