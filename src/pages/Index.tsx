@@ -173,6 +173,34 @@ const Index = () => {
     }
   };
 
+  const handleLeaveQueue = async (bookId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("book_requests")
+        .delete()
+        .eq("book_id", bookId)
+        .eq("user_id", user.id)
+        .eq("status", "pending");
+
+      if (error) throw error;
+
+      toast({
+        title: "Left Queue",
+        description: "You have been removed from the queue.",
+      });
+
+      fetchUserRequests();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
@@ -381,6 +409,7 @@ const Index = () => {
                             key={book.id}
                             book={book}
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
+                            onLeaveQueue={handleLeaveQueue}
                             isLibrarian={false}
                             userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
                           />
