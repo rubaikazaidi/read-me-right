@@ -241,7 +241,7 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <LibraryStats books={books} onFilterChange={setStatusFilter} activeFilter={statusFilter} userRole={userRole || undefined} />
+        <LibraryStats books={books} onFilterChange={setStatusFilter} activeFilter={statusFilter} userRole={userRole || undefined} userId={user?.id} />
 
         <div className="mt-8 space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
