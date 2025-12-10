@@ -270,6 +270,44 @@ export function LibrarianDashboard() {
 
   const handleMarkAsReturned = async (bookId: string) => {
     try {
+      // First, get the book details to record in history
+      const bookToReturn = books.find(b => b.id === bookId);
+      if (!bookToReturn || !bookToReturn.borrowed_by) {
+        throw new Error("Book not found or not borrowed");
+      }
+
+      const now = new Date();
+      const wasLate = bookToReturn.status === "late";
+      let daysLate = 0;
+      let fineAmount = 0;
+
+      if (wasLate && bookToReturn.due_date) {
+        const dueDate = new Date(bookToReturn.due_date);
+        daysLate = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        fineAmount = calculateFine(bookToReturn.due_date);
+      }
+
+      // Record the borrowing history
+      const { error: historyError } = await supabase
+        .from("borrowing_history")
+        .insert({
+          book_id: bookId,
+          user_id: bookToReturn.borrowed_by,
+          book_title: bookToReturn.title,
+          book_author: bookToReturn.author,
+          borrowed_at: bookToReturn.borrowed_at,
+          returned_at: now.toISOString(),
+          was_late: wasLate,
+          days_late: daysLate,
+          fine_amount: fineAmount,
+        });
+
+      if (historyError) {
+        console.error("Failed to record history:", historyError);
+        // Continue with the return even if history fails
+      }
+
+      // Update the book status
       const { error } = await supabase
         .from("books")
         .update({

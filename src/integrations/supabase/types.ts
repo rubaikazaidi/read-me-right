@@ -98,6 +98,56 @@ export type Database = {
         }
         Relationships: []
       }
+      borrowing_history: {
+        Row: {
+          book_author: string
+          book_id: string
+          book_title: string
+          borrowed_at: string
+          created_at: string | null
+          days_late: number | null
+          fine_amount: number | null
+          id: string
+          returned_at: string
+          user_id: string
+          was_late: boolean
+        }
+        Insert: {
+          book_author: string
+          book_id: string
+          book_title: string
+          borrowed_at: string
+          created_at?: string | null
+          days_late?: number | null
+          fine_amount?: number | null
+          id?: string
+          returned_at?: string
+          user_id: string
+          was_late?: boolean
+        }
+        Update: {
+          book_author?: string
+          book_id?: string
+          book_title?: string
+          borrowed_at?: string
+          created_at?: string | null
+          days_late?: number | null
+          fine_amount?: number | null
+          id?: string
+          returned_at?: string
+          user_id?: string
+          was_late?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "borrowing_history_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
