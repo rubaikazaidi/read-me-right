@@ -2,11 +2,23 @@ import { Book } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { BookOpen, Pencil } from "lucide-react";
+import { BookOpen, Pencil, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface BookCardProps {
   book: Book;
   onRequestBook?: (bookId: string) => void;
+  onLeaveQueue?: (bookId: string) => void;
   isLibrarian?: boolean;
   onEdit?: () => void;
   onViewDetails?: () => void;
@@ -28,7 +40,7 @@ const statusConfig = {
   },
 };
 
-export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, onViewDetails, userRequest }: BookCardProps) {
+export function BookCard({ book, onRequestBook, onLeaveQueue, isLibrarian = false, onEdit, onViewDetails, userRequest }: BookCardProps) {
   const statusStyle = statusConfig[book.status];
 
   return (
@@ -91,7 +103,7 @@ export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, onV
       )}
       {userRequest && (
         <CardFooter className="px-3 pb-3 pt-0">
-          <div className="w-full text-center p-2 bg-muted rounded-md">
+          <div className="w-full flex items-center justify-center gap-2 p-2 bg-muted rounded-md">
             <p className="text-xs font-medium">
               {userRequest.status === "approved" ? (
                 "✓ Borrowed"
@@ -101,6 +113,34 @@ export function BookCard({ book, onRequestBook, isLibrarian = false, onEdit, onV
                 "Pending"
               )}
             </p>
+            {userRequest.status === "pending" && userRequest.queue_position && onLeaveQueue && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Leave Queue?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to leave the queue for "{book.title}"? You will lose your current position.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onLeaveQueue(book.id)}>
+                      Leave Queue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </CardFooter>
       )}
