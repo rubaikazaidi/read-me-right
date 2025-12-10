@@ -374,15 +374,18 @@ const Index = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {filteredBooks.map((book) => (
-                        <BookCard
-                          key={book.id}
-                          book={book}
-                          onRequestBook={handleRequestBook}
-                          isLibrarian={false}
-                          userRequest={userRequests[book.id] || null}
-                        />
-                      ))}
+                      {filteredBooks.map((book) => {
+                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        return (
+                          <BookCard
+                            key={book.id}
+                            book={book}
+                            onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
+                            isLibrarian={false}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </TabsContent>
