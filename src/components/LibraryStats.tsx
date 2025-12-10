@@ -11,8 +11,13 @@ interface LibraryStatsProps {
 export function LibraryStats({ books, onFilterChange, activeFilter, userRole }: LibraryStatsProps) {
   const totalBooks = books.length;
   const availableBooks = books.filter((b) => b.status === "available").length;
-  const borrowedBooks = books.filter((b) => b.status === "borrowed").length;
+  const borrowedOnlyBooks = books.filter((b) => b.status === "borrowed").length;
   const lateBooks = books.filter((b) => b.status === "late").length;
+  
+  // For students, borrowed count includes late books since they don't see the late category
+  const borrowedBooks = userRole === "student" 
+    ? borrowedOnlyBooks + lateBooks 
+    : borrowedOnlyBooks;
 
   const stats = [
     {
