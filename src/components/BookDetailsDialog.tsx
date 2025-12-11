@@ -8,7 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, User, Mail, Calendar, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BookOpen, User, Mail, Calendar, Clock, History } from "lucide-react";
+import { BookHistoryDialog } from "./BookHistoryDialog";
 
 interface BookDetailsDialogProps {
   book: Book | null;
@@ -36,6 +38,7 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
   const [borrower, setBorrower] = useState<BorrowerProfile | null>(null);
   const [queueRequests, setQueueRequests] = useState<QueueRequest[]>([]);
   const [loading, setLoading] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     if (book && open) {
@@ -187,7 +190,24 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
           )}
 
           {loading && <p className="text-sm text-muted-foreground text-center">Loading...</p>}
+
+          {/* View History Button */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setHistoryOpen(true)}
+          >
+            <History className="h-4 w-4 mr-2" />
+            View Borrowing History
+          </Button>
         </div>
+
+        <BookHistoryDialog
+          bookId={book.id}
+          bookTitle={book.title}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+        />
       </DialogContent>
     </Dialog>
   );
