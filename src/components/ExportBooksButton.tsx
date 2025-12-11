@@ -4,7 +4,6 @@ import { FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getFineSettings, calculateFine } from "@/components/FineSettingsDialog";
-import * as XLSX from "xlsx";
 
 interface BookWithBorrower {
   id: string;
@@ -84,6 +83,9 @@ export const ExportBooksButton = () => {
         };
       }) || [];
 
+      // Dynamic import to avoid React version conflicts
+      const XLSX = await import("xlsx");
+      
       // Create workbook and worksheet
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
