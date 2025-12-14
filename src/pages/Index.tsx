@@ -11,6 +11,7 @@ import { LibraryStats } from "@/components/LibraryStats";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { FineSettingsDialog } from "@/components/FineSettingsDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
+import { StudentSearchDialog } from "@/components/StudentSearchDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -258,6 +259,7 @@ const Index = () => {
             </div>
             {userRole === "librarian" && (
               <div className="flex gap-2">
+                <StudentSearchDialog />
                 <ExportBooksButton />
                 <FineSettingsDialog />
                 <AddBookDialog onBookAdded={handleBookAdded} />
