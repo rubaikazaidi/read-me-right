@@ -12,6 +12,7 @@ import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { FineSettingsDialog } from "@/components/FineSettingsDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
+import { BookRecommendations } from "@/components/BookRecommendations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -327,6 +328,14 @@ const Index = () => {
             </Tabs>
           ) : (
             <>
+              {/* Book Recommendations Section for Students */}
+              <BookRecommendations
+                userId={user.id}
+                allBooks={books}
+                onRequestBook={handleRequestBook}
+                userRequests={userRequests}
+              />
+
               {/* My Borrowed Books Section for Students */}
               {(() => {
                 const myBorrowedBooks = books.filter(
