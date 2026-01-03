@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,8 +44,11 @@ const StudentSearchDialog = () => {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
+  const searchStudents = useCallback(async (term: string) => {
+    if (!term.trim()) {
+      setStudents([]);
+      return;
+    }
     
     setSearchLoading(true);
     setSelectedStudent(null);
@@ -64,7 +67,7 @@ const StudentSearchDialog = () => {
         .from("profiles")
         .select("id, full_name, email")
         .in("id", studentIds)
-        .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
 
       if (error) throw error;
       setStudents(data || []);
@@ -73,7 +76,16 @@ const StudentSearchDialog = () => {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchStudents(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, searchStudents]);
 
   const handleSelectStudent = async (student: StudentProfile) => {
     setSelectedStudent(student);
@@ -134,20 +146,19 @@ const StudentSearchDialog = () => {
 
         <div className="space-y-4">
           {/* Search Bar */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10"
-              />
-            </div>
-            <Button onClick={handleSearch} disabled={searchLoading}>
-              {searchLoading ? "Searching..." : "Search"}
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+            {searchLoading && (
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
+                Searching...
+              </span>
+            )}
           </div>
 
           {/* Student List or Selected Student Details */}
