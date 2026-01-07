@@ -7,7 +7,7 @@ import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { EditBookDialog } from "@/components/EditBookDialog";
 import { BookDetailsDialog } from "@/components/BookDetailsDialog";
-import { LibraryStats } from "@/components/LibraryStats";
+import { LibrarySidebar, SidebarToggle } from "@/components/LibrarySidebar";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { FineSettingsDialog } from "@/components/FineSettingsDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
@@ -222,34 +222,40 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <BookOpen className="h-6 w-6 text-primary" />
+    <LibrarySidebar 
+      books={books} 
+      onFilterChange={setStatusFilter} 
+      activeFilter={statusFilter} 
+      userRole={userRole || undefined} 
+      userId={user?.id}
+    >
+      <div className="flex-1 bg-gradient-to-br from-background via-background/95 to-primary/5">
+        <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <SidebarToggle />
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
+                  <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
-                <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
-              </div>
+              <Button variant="outline" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <LibraryStats books={books} onFilterChange={setStatusFilter} activeFilter={statusFilter} userRole={userRole || undefined} userId={user?.id} />
-
-        <div className="mt-8 space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <main className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Search by title, author, or ISBN..."
@@ -434,24 +440,25 @@ const Index = () => {
               </Tabs>
             </>
           )}
-        </div>
-      </main>
+          </div>
+        </main>
 
-      {editingBook && (
-        <EditBookDialog
-          book={editingBook}
-          open={!!editingBook}
-          onOpenChange={(open) => !open && setEditingBook(null)}
-          onBookUpdated={handleBookUpdated}
+        {editingBook && (
+          <EditBookDialog
+            book={editingBook}
+            open={!!editingBook}
+            onOpenChange={(open) => !open && setEditingBook(null)}
+            onBookUpdated={handleBookUpdated}
+          />
+        )}
+
+        <BookDetailsDialog
+          book={viewingBook}
+          open={!!viewingBook}
+          onOpenChange={(open) => !open && setViewingBook(null)}
         />
-      )}
-
-      <BookDetailsDialog
-        book={viewingBook}
-        open={!!viewingBook}
-        onOpenChange={(open) => !open && setViewingBook(null)}
-      />
-    </div>
+      </div>
+    </LibrarySidebar>
   );
 };
 
