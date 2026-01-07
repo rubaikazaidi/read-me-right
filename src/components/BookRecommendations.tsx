@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book } from "@/types/book";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BookOpen, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface BookRecommendationsProps {
   userId: string;
@@ -25,6 +28,7 @@ export const BookRecommendations = ({
 }: BookRecommendationsProps) => {
   const [recommendations, setRecommendations] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   useEffect(() => {
     if (userId && allBooks.length > 0) {
@@ -155,7 +159,7 @@ export const BookRecommendations = ({
             <Card 
               key={book.id} 
               className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-              onClick={() => !hasRequest && onRequestBook?.(book.id)}
+              onClick={() => setSelectedBook(book)}
             >
               <div className="relative aspect-[2/3] overflow-hidden bg-muted">
                 {book.cover_image_url ? (
@@ -179,15 +183,87 @@ export const BookRecommendations = ({
                 <h3 className="font-medium text-sm truncate">{book.title}</h3>
                 <p className="text-xs text-muted-foreground truncate">{book.author}</p>
                 {hasRequest ? (
-                  <p className="text-xs text-primary mt-1">In Queue</p>
+                  <Badge variant="secondary" className="mt-2 text-xs">In Queue</Badge>
                 ) : (
-                  <p className="text-xs text-green-600 mt-1">Click to borrow</p>
+                  <Button 
+                    size="sm" 
+                    className="mt-2 w-full text-xs h-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRequestBook?.(book.id);
+                    }}
+                  >
+                    Borrow
+                  </Button>
                 )}
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Book Details Dialog */}
+      <Dialog open={!!selectedBook} onOpenChange={(open) => !open && setSelectedBook(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedBook?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedBook && (
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                {selectedBook.cover_image_url ? (
+                  <img
+                    src={selectedBook.cover_image_url}
+                    alt={selectedBook.title}
+                    className="w-24 h-36 object-cover rounded-lg shadow-md"
+                  />
+                ) : (
+                  <div className="w-24 h-36 bg-muted rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium text-muted-foreground">Author:</span>{" "}
+                    {selectedBook.author}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-muted-foreground">Genre:</span>{" "}
+                    <Badge variant="outline">{selectedBook.category}</Badge>
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-muted-foreground">ISBN:</span>{" "}
+                    {selectedBook.isbn}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-muted-foreground">Status:</span>{" "}
+                    <Badge variant={selectedBook.status === "available" ? "default" : "secondary"}>
+                      {selectedBook.status === "available" ? "Available" : "Borrowed"}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
+              
+              {!userRequests[selectedBook.id] && selectedBook.status === "available" && (
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    onRequestBook?.(selectedBook.id);
+                    setSelectedBook(null);
+                  }}
+                >
+                  Borrow This Book
+                </Button>
+              )}
+              {userRequests[selectedBook.id] && (
+                <p className="text-center text-sm text-muted-foreground">
+                  You have already requested this book
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
