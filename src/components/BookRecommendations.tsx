@@ -4,7 +4,7 @@ import { Book } from "@/types/book";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,7 +28,9 @@ export const BookRecommendations = ({
 }: BookRecommendationsProps) => {
   const [recommendations, setRecommendations] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [shownBookIds, setShownBookIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (userId && allBooks.length > 0) {
@@ -36,50 +38,69 @@ export const BookRecommendations = ({
     }
   }, [userId, allBooks]);
 
+  const getPreferredPatterns = async () => {
+    // Get user's currently borrowed books
+    const currentlyBorrowed = allBooks.filter(
+      book => book.borrowed_by === userId && (book.status === "borrowed" || book.status === "late")
+    );
+
+    // Get user's borrowing history with book details
+    const { data: history, error } = await supabase
+      .from("borrowing_history")
+      .select("book_id, book_author")
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    const borrowedBookIds = new Set([
+      ...currentlyBorrowed.map(b => b.id),
+      ...(history || []).map(h => h.book_id)
+    ]);
+
+    // Count categories and authors from current and historical borrows
+    const categoryCount: Record<string, number> = {};
+    const authorCount: Record<string, number> = {};
+
+    // Add current books' categories and authors (weighted higher)
+    currentlyBorrowed.forEach(book => {
+      categoryCount[book.category] = (categoryCount[book.category] || 0) + 3;
+      authorCount[book.author] = (authorCount[book.author] || 0) + 3;
+    });
+
+    // Add historical books' categories and authors
+    if (history && history.length > 0) {
+      const historyBookIds = history.map(h => h.book_id);
+      const historyBooks = allBooks.filter(b => historyBookIds.includes(b.id));
+      historyBooks.forEach(book => {
+        categoryCount[book.category] = (categoryCount[book.category] || 0) + 1;
+        authorCount[book.author] = (authorCount[book.author] || 0) + 1;
+      });
+      // Also count authors from history records
+      history.forEach(h => {
+        if (h.book_author) {
+          authorCount[h.book_author] = (authorCount[h.book_author] || 0) + 1;
+        }
+      });
+    }
+
+    // Sort categories and authors by frequency
+    const sortedCategories: CategoryCount[] = Object.entries(categoryCount)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const sortedAuthors = Object.entries(authorCount)
+      .map(([author, count]) => ({ author, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return { borrowedBookIds, sortedCategories, sortedAuthors };
+  };
+
   const generateRecommendations = async () => {
     setLoading(true);
     try {
-      // Get user's currently borrowed books
-      const currentlyBorrowed = allBooks.filter(
-        book => book.borrowed_by === userId && (book.status === "borrowed" || book.status === "late")
-      );
+      const { borrowedBookIds, sortedCategories, sortedAuthors } = await getPreferredPatterns();
 
-      // Get user's borrowing history
-      const { data: history, error } = await supabase
-        .from("borrowing_history")
-        .select("book_id")
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      const borrowedBookIds = new Set([
-        ...currentlyBorrowed.map(b => b.id),
-        ...(history || []).map(h => h.book_id)
-      ]);
-
-      // Count categories from current and historical borrows
-      const categoryCount: Record<string, number> = {};
-
-      // Add current books' categories
-      currentlyBorrowed.forEach(book => {
-        categoryCount[book.category] = (categoryCount[book.category] || 0) + 2; // Weight current books more
-      });
-
-      // Add historical books' categories
-      if (history && history.length > 0) {
-        const historyBookIds = history.map(h => h.book_id);
-        const historyBooks = allBooks.filter(b => historyBookIds.includes(b.id));
-        historyBooks.forEach(book => {
-          categoryCount[book.category] = (categoryCount[book.category] || 0) + 1;
-        });
-      }
-
-      // Sort categories by frequency
-      const sortedCategories: CategoryCount[] = Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count);
-
-      // Get available books the user hasn't borrowed, prioritized by preferred categories
+      // Get available books the user hasn't borrowed
       const availableBooks = allBooks.filter(
         book => book.status === "available" && !borrowedBookIds.has(book.id)
       );
@@ -102,21 +123,88 @@ export const BookRecommendations = ({
         const remainingBooks = availableBooks.filter(
           b => !recommendedBooks.some(rb => rb.id === b.id)
         );
-        // Shuffle and take remaining
         const shuffled = remainingBooks.sort(() => Math.random() - 0.5);
         recommendedBooks.push(...shuffled.slice(0, 4 - recommendedBooks.length));
       }
 
-      setRecommendations(recommendedBooks.slice(0, 6));
+      const finalBooks = recommendedBooks.slice(0, 6);
+      setRecommendations(finalBooks);
+      setShownBookIds(new Set(finalBooks.map(b => b.id)));
     } catch (error) {
       console.error("Failed to generate recommendations:", error);
-      // Fallback: show random available books
       const available = allBooks.filter(b => b.status === "available").slice(0, 4);
       setRecommendations(available);
+      setShownBookIds(new Set(available.map(b => b.id)));
     } finally {
       setLoading(false);
     }
   };
+
+  const loadMoreRecommendations = async () => {
+    setLoadingMore(true);
+    try {
+      const { borrowedBookIds, sortedCategories, sortedAuthors } = await getPreferredPatterns();
+
+      // Get available books not already shown and not borrowed
+      const availableBooks = allBooks.filter(
+        book => book.status === "available" && 
+                !borrowedBookIds.has(book.id) && 
+                !shownBookIds.has(book.id)
+      );
+
+      let newRecommendations: Book[] = [];
+
+      // Prioritize by preferred authors first
+      if (sortedAuthors.length > 0) {
+        for (const { author } of sortedAuthors.slice(0, 5)) {
+          const booksByAuthor = availableBooks.filter(
+            b => b.author === author && !newRecommendations.some(rb => rb.id === b.id)
+          );
+          newRecommendations.push(...booksByAuthor.slice(0, 2));
+          if (newRecommendations.length >= 3) break;
+        }
+      }
+
+      // Then by preferred categories
+      if (newRecommendations.length < 6 && sortedCategories.length > 0) {
+        for (const { category } of sortedCategories) {
+          const booksInCategory = availableBooks.filter(
+            b => b.category === category && !newRecommendations.some(rb => rb.id === b.id)
+          );
+          newRecommendations.push(...booksInCategory.slice(0, 2));
+          if (newRecommendations.length >= 6) break;
+        }
+      }
+
+      // Fill remaining with random available books
+      if (newRecommendations.length < 4) {
+        const remainingBooks = availableBooks.filter(
+          b => !newRecommendations.some(rb => rb.id === b.id)
+        );
+        const shuffled = remainingBooks.sort(() => Math.random() - 0.5);
+        newRecommendations.push(...shuffled.slice(0, 4 - newRecommendations.length));
+      }
+
+      const moreBooks = newRecommendations.slice(0, 6);
+      if (moreBooks.length > 0) {
+        setRecommendations(prev => [...prev, ...moreBooks]);
+        setShownBookIds(prev => {
+          const newSet = new Set(prev);
+          moreBooks.forEach(b => newSet.add(b.id));
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load more recommendations:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Check if there are more books to load
+  const hasMoreBooks = allBooks.filter(
+    book => book.status === "available" && !shownBookIds.has(book.id)
+  ).length > 0;
 
   if (loading) {
     return (
@@ -146,10 +234,24 @@ export const BookRecommendations = ({
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        Recommended For You
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Recommended For You
+        </h2>
+        {hasMoreBooks && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadMoreRecommendations}
+            disabled={loadingMore}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
+            {loadingMore ? 'Loading...' : 'Load More'}
+          </Button>
+        )}
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {recommendations.map((book) => {
           const userRequest = userRequests[book.id];
