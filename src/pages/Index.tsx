@@ -9,7 +9,7 @@ import { EditBookDialog } from "@/components/EditBookDialog";
 import { BookDetailsDialog } from "@/components/BookDetailsDialog";
 import { LibrarySidebar, SidebarToggle } from "@/components/LibrarySidebar";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
-import { FineSettingsDialog } from "@/components/FineSettingsDialog";
+import { FineSettingsDialog, calculateFine } from "@/components/FineSettingsDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
 import { BookRecommendations } from "@/components/BookRecommendations";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
@@ -379,6 +379,12 @@ const Index = () => {
                                     {book.status === "late" ? "Overdue: " : "Due: "}
                                     {format(new Date(book.due_date), "MMM d, yyyy")}
                                   </span>
+                                </div>
+                              )}
+                              {book.status === "late" && book.due_date && (
+                                <div className="mt-1 flex items-center gap-1 text-sm text-destructive font-semibold">
+                                  <IndianRupee className="h-4 w-4" />
+                                  <span>Fine: ₹{calculateFine(book.due_date).toFixed(2)}</span>
                                 </div>
                               )}
                             </div>
