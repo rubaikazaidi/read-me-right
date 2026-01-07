@@ -164,11 +164,8 @@ export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, 
 
 export function SidebarToggle() {
   return (
-    <SidebarTrigger asChild>
-      <Button variant="ghost" size="icon" className="h-9 w-9">
-        <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle sidebar</span>
-      </Button>
+    <SidebarTrigger className="h-9 w-9">
+      <Menu className="h-5 w-5" />
     </SidebarTrigger>
   );
 }
