@@ -128,7 +128,7 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<Li
                         {!isCollapsed && (
                           <div className="flex flex-1 items-center justify-between">
                             <span className="text-sm font-medium">Previously Borrowed</span>
-                            <span className="text-sm font-bold text-secondary-foreground">View</span>
+                            <span className="text-sm font-bold text-accent">View</span>
                           </div>
                         )}
                       </SidebarMenuButton>
