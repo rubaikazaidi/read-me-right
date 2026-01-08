@@ -95,11 +95,11 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<Li
                       onClick={() => onFilterChange?.(stat.filter)}
                       isActive={isActive}
                       tooltip={`${stat.label}: ${stat.value}`}
-                      className={`w-full justify-start gap-3 px-4 py-3 ${
+                      className={`w-full ${isCollapsed ? 'justify-center px-0' : 'justify-start px-4'} gap-3 py-3 ${
                         isActive ? "bg-primary/10 text-primary" : ""
                       }`}
                     >
-                      <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                      <div className={`p-2 rounded-lg ${stat.bgColor} ${isCollapsed ? 'mx-auto' : ''}`}>
                         <Icon className={`w-4 h-4 ${stat.color}`} />
                       </div>
                       {!isCollapsed && (
@@ -120,9 +120,9 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<Li
                     trigger={
                       <SidebarMenuButton
                         tooltip="Previously Borrowed"
-                        className="w-full justify-start gap-3 px-4 py-3"
+                        className={`w-full ${isCollapsed ? 'justify-center px-0' : 'justify-start px-4'} gap-3 py-3`}
                       >
-                        <div className="p-2 rounded-lg bg-secondary/50">
+                        <div className={`p-2 rounded-lg bg-secondary/50 ${isCollapsed ? 'mx-auto' : ''}`}>
                           <History className="w-4 h-4 text-secondary-foreground" />
                         </div>
                         {!isCollapsed && (
