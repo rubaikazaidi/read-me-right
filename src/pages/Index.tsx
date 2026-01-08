@@ -36,6 +36,7 @@ const Index = () => {
   const [userRequests, setUserRequests] = useState<Record<string, { status: string; queue_position: number | null }>>({});
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -46,11 +47,30 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       fetchBooks();
+      fetchUserProfile();
       if (userRole === "student") {
         fetchUserRequests();
       }
     }
   }, [user, userRole]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setUserName(data.full_name);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+    }
+  };
 
   const fetchBooks = async () => {
     try {
@@ -240,7 +260,9 @@ const Index = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
-                  <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {userRole === "student" ? `Student: ${userName}` : "Librarian"}
+                  </p>
                 </div>
               </div>
               <Button variant="outline" onClick={handleSignOut}>
