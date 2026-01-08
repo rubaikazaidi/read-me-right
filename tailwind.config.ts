@@ -52,6 +52,17 @@ export default {
           borrowed: "hsl(var(--status-borrowed))",
           late: "hsl(var(--status-late))",
         },
+        slate: {
+          blue: "hsl(var(--slate-blue))",
+        },
+        ochre: {
+          DEFAULT: "hsl(var(--ochre))",
+          light: "hsl(var(--ochre-light))",
+          dark: "hsl(var(--ochre-dark))",
+        },
+        gold: {
+          muted: "hsl(var(--gold-muted))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
