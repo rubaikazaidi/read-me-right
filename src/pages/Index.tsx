@@ -12,6 +12,7 @@ import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { FineSettingsDialog, calculateFine } from "@/components/FineSettingsDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
+import { StudentProfileDialog } from "@/components/StudentProfileDialog";
 import { BookRecommendations } from "@/components/BookRecommendations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -265,10 +266,15 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
+              <div className="flex items-center gap-2">
+                {userRole === "student" && user && (
+                  <StudentProfileDialog userId={user.id} />
+                )}
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         </header>
