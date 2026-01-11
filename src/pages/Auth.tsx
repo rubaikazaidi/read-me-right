@@ -15,6 +15,10 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"student" | "librarian">("student");
+  const [grade, setGrade] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [age, setAge] = useState("");
+  const [grNumber, setGrNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -48,7 +52,7 @@ const Auth = () => {
         });
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -61,6 +65,23 @@ const Auth = () => {
         });
 
         if (error) throw error;
+
+        // If student, update profile with additional details
+        if (role === "student" && authData.user) {
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+              grade: grade || null,
+              organization: organization || null,
+              age: age ? parseInt(age) : null,
+              gr_number: grNumber || null,
+            })
+            .eq("id", authData.user.id);
+
+          if (profileError) {
+            console.error("Error updating student profile:", profileError);
+          }
+        }
 
         toast({
           title: "Account created!",
@@ -125,6 +146,57 @@ const Auth = () => {
                     </div>
                   </RadioGroup>
                 </div>
+
+                {/* Student-specific fields */}
+                {role === "student" && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Student Details</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grade</Label>
+                        <Input
+                          id="grade"
+                          type="text"
+                          placeholder="e.g., 10th"
+                          value={grade}
+                          onChange={(e) => setGrade(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="5"
+                          max="100"
+                          placeholder="e.g., 16"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="organization">School/Organization</Label>
+                      <Input
+                        id="organization"
+                        type="text"
+                        placeholder="e.g., ABC High School"
+                        value={organization}
+                        onChange={(e) => setOrganization(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="grNumber">GR Number</Label>
+                      <Input
+                        id="grNumber"
+                        type="text"
+                        placeholder="e.g., GR-12345"
+                        value={grNumber}
+                        onChange={(e) => setGrNumber(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             )}
             <div className="space-y-2">

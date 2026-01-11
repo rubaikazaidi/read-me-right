@@ -4,13 +4,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Search, User } from "lucide-react";
+import { Users, Search, User, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { EditStudentProfileDialog } from "@/components/EditStudentProfileDialog";
 
 interface StudentProfile {
   id: string;
   full_name: string;
   email: string | null;
+  grade: string | null;
+  organization: string | null;
+  age: number | null;
+  gr_number: string | null;
 }
 
 const StudentSearchDialog = () => {
@@ -19,6 +24,8 @@ const StudentSearchDialog = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentProfile | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const searchStudents = useCallback(async (term: string) => {
     if (!term.trim()) {
@@ -40,7 +47,7 @@ const StudentSearchDialog = () => {
       // Search profiles that are students
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, grade, organization, age, gr_number")
         .in("id", studentIds)
         .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
 
@@ -67,6 +74,17 @@ const StudentSearchDialog = () => {
     navigate(`/student/${student.id}`);
   };
 
+  const handleEditStudent = (e: React.MouseEvent, student: StudentProfile) => {
+    e.stopPropagation();
+    setEditingStudent(student);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditUpdate = () => {
+    // Refresh the search results
+    searchStudents(searchTerm);
+  };
+
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
@@ -76,68 +94,90 @@ const StudentSearchDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Users className="h-4 w-4 mr-2" />
-          Students
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Student Search
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Users className="h-4 w-4 mr-2" />
+            Students
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Student Search
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            {searchLoading && (
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
-                Searching...
-              </span>
-            )}
-          </div>
-
-          {/* Student List */}
-          <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-2">
-              {students.length === 0 && searchTerm && !searchLoading && (
-                <p className="text-center text-muted-foreground py-8">
-                  No students found matching "{searchTerm}"
-                </p>
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+              {searchLoading && (
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
+                  Searching...
+                </span>
               )}
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => handleSelectStudent(student)}
-                  className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <User className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{student.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{student.email}</p>
+            </div>
+
+            {/* Student List */}
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-2">
+                {students.length === 0 && searchTerm && !searchLoading && (
+                  <p className="text-center text-muted-foreground py-8">
+                    No students found matching "{searchTerm}"
+                  </p>
+                )}
+                {students.map((student) => (
+                  <div
+                    key={student.id}
+                    onClick={() => handleSelectStudent(student)}
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{student.full_name}</p>
+                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                          {student.grade && (
+                            <p className="text-xs text-muted-foreground">Grade: {student.grade}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => handleEditStudent(e, student)}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-      </DialogContent>
-    </Dialog>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <EditStudentProfileDialog
+        student={editingStudent}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onUpdate={handleEditUpdate}
+      />
+    </>
   );
 };
 
