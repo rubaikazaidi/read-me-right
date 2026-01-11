@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { User, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface StudentProfile {
   full_name: string;
@@ -20,9 +21,12 @@ interface StudentProfileDialogProps {
 }
 
 export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && userId) {
@@ -57,6 +61,77 @@ export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
       .slice(0, 2);
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: "Please select an image file.",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("book-covers")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("book-covers")
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ profile_picture_url: publicUrl })
+        .eq("id", userId);
+
+      if (updateError) throw updateError;
+
+      setProfile((prev) => prev ? { ...prev, profile_picture_url: publicUrl } : null);
+
+      toast({
+        title: "Profile picture updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error uploading profile picture:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message,
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -75,13 +150,34 @@ export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
           </div>
         ) : profile ? (
           <div className="space-y-6">
-            <div className="flex justify-center">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.profile_picture_url || undefined} alt={profile.full_name} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {getInitials(profile.full_name)}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={profile.profile_picture_url || undefined} alt={profile.full_name} />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {getInitials(profile.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+              </div>
+              {uploading && (
+                <span className="text-sm text-muted-foreground">Uploading...</span>
+              )}
             </div>
             
             <div className="space-y-4">
