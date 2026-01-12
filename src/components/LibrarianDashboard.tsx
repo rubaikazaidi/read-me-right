@@ -8,6 +8,9 @@ import { Book, BookStatus } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { AssignBookDialog } from "./AssignBookDialog";
 import { calculateFine } from "./FineSettingsDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface BookRequest {
   id: string;
@@ -36,6 +39,8 @@ export function LibrarianDashboard() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [bookToAssign, setBookToAssign] = useState<BookWithBorrower | null>(null);
   const [bookSortBy, setBookSortBy] = useState<string>("title-asc");
+  const [statusManagementOpen, setStatusManagementOpen] = useState(true);
+  const [requestQueuesOpen, setRequestQueuesOpen] = useState(true);
   const { toast } = useToast();
 
   // Sort books based on selected criteria
@@ -429,174 +434,266 @@ export function LibrarianDashboard() {
     return acc;
   }, {} as Record<string, BookRequest[]>);
 
+  // Get books with approved requests (pending pickup)
+  const booksWithApprovedRequests = sortedBooks.filter(book => approvedByBook[book.id]?.length > 0);
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Book Status Management</CardTitle>
-            <Select value={bookSortBy} onValueChange={setBookSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by..." />
+  const renderBookItem = (book: BookWithBorrower, showApprovedRequests: boolean = true) => {
+    const bookApprovedRequests = approvedByBook[book.id] || [];
+    return (
+      <div key={book.id} className={`border rounded-lg p-4 ${getStatusBackgroundClass(book.status)}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <p className="font-semibold">{book.title}</p>
+              <Badge variant={getStatusBadgeVariant(book.status)}>
+                {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">by {book.author}</p>
+            <p className="text-xs text-muted-foreground">ISBN: {book.isbn} • Category: {book.category}</p>
+            
+            {/* Show borrower details for borrowed books */}
+            {(book.status === "borrowed" || book.status === "late") && book.borrowed_by && (
+              <div className="mt-3 p-3 bg-muted/50 rounded-md space-y-1">
+                <p className="text-sm">
+                  <span className="font-medium">Borrowed by:</span> {book.borrower_name || "Unknown"}
+                </p>
+                {book.borrowed_at && (
+                  <p className="text-sm">
+                    <span className="font-medium">Borrowed on:</span> {new Date(book.borrowed_at).toLocaleDateString()}
+                  </p>
+                )}
+                {book.due_date && (
+                  <p className="text-sm">
+                    <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
+                  </p>
+                )}
+                {book.status === "late" && book.due_date && (
+                  <p className="text-sm text-destructive font-semibold">
+                    <span className="font-medium">Late Fine:</span> ₹{calculateFine(book.due_date).toFixed(2)}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 items-center">
+            {(book.status === "borrowed" || book.status === "late") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleMarkAsReturned(book.id)}
+              >
+                Mark as Returned
+              </Button>
+            )}
+            <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value, book)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="title-asc">Title: A-Z</SelectItem>
-                <SelectItem value="title-desc">Title: Z-A</SelectItem>
-                <SelectItem value="author">By Author</SelectItem>
-                <SelectItem value="date-new">Recently Added</SelectItem>
-                <SelectItem value="date-old">Oldest First</SelectItem>
-                <SelectItem value="status-late">Status: Late First</SelectItem>
-                <SelectItem value="status-available">Status: Available First</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="borrowed">Borrowed</SelectItem>
+                <SelectItem value="late">Late</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </CardHeader>
-        <CardContent>
-          {books.length === 0 ? (
-            <p className="text-muted-foreground">No books in the library</p>
-          ) : (
-            <div className="space-y-4">
-              {sortedBooks.map((book) => {
-                const bookApprovedRequests = approvedByBook[book.id] || [];
-                return (
-                  <div key={book.id} className={`border rounded-lg p-4 ${getStatusBackgroundClass(book.status)}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <p className="font-semibold">{book.title}</p>
-                          <Badge variant={getStatusBadgeVariant(book.status)}>
-                            {book.status === "available" ? "Available" : book.status === "borrowed" ? "Borrowed" : "Late"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">by {book.author}</p>
-                        <p className="text-xs text-muted-foreground">ISBN: {book.isbn} • Category: {book.category}</p>
-                        
-                        {/* Show borrower details for borrowed books */}
-                        {(book.status === "borrowed" || book.status === "late") && book.borrowed_by && (
-                          <div className="mt-3 p-3 bg-muted/50 rounded-md space-y-1">
-                            <p className="text-sm">
-                              <span className="font-medium">Borrowed by:</span> {book.borrower_name || "Unknown"}
-                            </p>
-                            {book.borrowed_at && (
-                              <p className="text-sm">
-                                <span className="font-medium">Borrowed on:</span> {new Date(book.borrowed_at).toLocaleDateString()}
-                              </p>
-                            )}
-                            {book.due_date && (
-                              <p className="text-sm">
-                                <span className="font-medium">Due date:</span> {new Date(book.due_date).toLocaleDateString()}
-                              </p>
-                            )}
-                            {book.status === "late" && book.due_date && (
-                              <p className="text-sm text-destructive font-semibold">
-                                <span className="font-medium">Late Fine:</span> ₹{calculateFine(book.due_date).toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        {(book.status === "borrowed" || book.status === "late") && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMarkAsReturned(book.id)}
-                          >
-                            Mark as Returned
-                          </Button>
-                        )}
-                        <Select value={book.status} onValueChange={(value) => handleUpdateBookStatus(book.id, value, book)}>
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="borrowed">Borrowed</SelectItem>
-                            <SelectItem value="late">Late</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {bookApprovedRequests.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
-                        {bookApprovedRequests.map((request) => (
-                          <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                            <p className="text-sm">{request.profiles?.full_name}</p>
-                            <Button
-                              size="sm"
-                              onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
-                            >
-                              Mark as Taken
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        {showApprovedRequests && bookApprovedRequests.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
+            {bookApprovedRequests.map((request) => (
+              <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                <p className="text-sm">{request.profiles?.full_name}</p>
+                <Button
+                  size="sm"
+                  onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                >
+                  Mark as Taken
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Request Queues</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {Object.keys(pendingByBook).length === 0 ? (
-            <p className="text-muted-foreground">No pending requests</p>
-          ) : (
-            <div className="space-y-6">
-              {Object.entries(pendingByBook).map(([bookId, bookRequests]) => {
-                return (
-                  <div key={bookId} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-3">
-                      {bookRequests[0]?.books?.title} by {bookRequests[0]?.books?.author}
-                    </h3>
-                    <div className="space-y-2">
-                      {bookRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between p-3 bg-muted rounded">
-                          <div className="flex items-center gap-3">
-                            {request.queue_position && (
-                              <Badge variant="outline">Queue #{request.queue_position}</Badge>
-                            )}
-                            <div>
-                              <p className="font-medium">{request.profiles?.full_name}</p>
-                              <p className="text-xs text-muted-foreground">Pending approval</p>
+  return (
+    <div className="space-y-6">
+      {/* Book Status Management - Collapsible */}
+      <Collapsible open={statusManagementOpen} onOpenChange={setStatusManagementOpen}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between cursor-pointer">
+                <div className="flex items-center gap-2">
+                  {statusManagementOpen ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <CardTitle>Book Status Management</CardTitle>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select value={bookSortBy} onValueChange={setBookSortBy}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                      <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                      <SelectItem value="author">By Author</SelectItem>
+                      <SelectItem value="date-new">Recently Added</SelectItem>
+                      <SelectItem value="date-old">Oldest First</SelectItem>
+                      <SelectItem value="status-late">Status: Late First</SelectItem>
+                      <SelectItem value="status-available">Status: Available First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="all">All Books ({books.length})</TabsTrigger>
+                  <TabsTrigger value="pending-pickup">
+                    Pending Pickup ({booksWithApprovedRequests.length})
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="all">
+                  {books.length === 0 ? (
+                    <p className="text-muted-foreground">No books in the library</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {sortedBooks.map((book) => renderBookItem(book, true))}
+                    </div>
+                  )}
+                </TabsContent>
+                <TabsContent value="pending-pickup">
+                  {booksWithApprovedRequests.length === 0 ? (
+                    <p className="text-muted-foreground">No books pending pickup</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {booksWithApprovedRequests.map((book) => {
+                        const bookApprovedRequests = approvedByBook[book.id] || [];
+                        return (
+                          <div key={book.id} className="border rounded-lg p-4 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                  <p className="font-semibold">{book.title}</p>
+                                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                    Pending Pickup
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">by {book.author}</p>
+                                <p className="text-xs text-muted-foreground">ISBN: {book.isbn} • Category: {book.category}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium">Students to Pick Up:</p>
+                              {bookApprovedRequests.map((request) => (
+                                <div key={request.id} className="flex items-center justify-between p-3 bg-background rounded border">
+                                  <div>
+                                    <p className="font-medium">{request.profiles?.full_name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Approved on {new Date(request.requested_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                                  >
+                                    Mark as Taken
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleRejectRequest(request.id)}
-                            >
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleApproveRequest(request.id)}
-                            >
-                              Approve
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Request Queues - Collapsible */}
+      <Collapsible open={requestQueuesOpen} onOpenChange={setRequestQueuesOpen}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center gap-2 cursor-pointer">
+                {requestQueuesOpen ? (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                )}
+                <CardTitle>Request Queues ({Object.keys(pendingByBook).length} pending)</CardTitle>
+              </div>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {Object.keys(pendingByBook).length === 0 ? (
+                <p className="text-muted-foreground">No pending requests</p>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(pendingByBook).map(([bookId, bookRequests]) => {
+                    return (
+                      <div key={bookId} className="border rounded-lg p-4">
+                        <h3 className="font-semibold mb-3">
+                          {bookRequests[0]?.books?.title} by {bookRequests[0]?.books?.author}
+                        </h3>
+                        <div className="space-y-2">
+                          {bookRequests.map((request) => (
+                            <div key={request.id} className="flex items-center justify-between p-3 bg-muted rounded">
+                              <div className="flex items-center gap-3">
+                                {request.queue_position && (
+                                  <Badge variant="outline">Queue #{request.queue_position}</Badge>
+                                )}
+                                <div>
+                                  <p className="font-medium">{request.profiles?.full_name}</p>
+                                  <p className="text-xs text-muted-foreground">Pending approval</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApproveRequest(request.id)}
+                                >
+                                  Approve
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {bookToAssign && (
         <AssignBookDialog
           open={assignDialogOpen}
