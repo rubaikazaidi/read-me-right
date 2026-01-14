@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           book_id: string
           id: string
+          organization_id: string | null
           queue_position: number | null
           requested_at: string | null
           status: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           book_id: string
           id?: string
+          organization_id?: string | null
           queue_position?: number | null
           requested_at?: string | null
           status?: string
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           book_id?: string
           id?: string
+          organization_id?: string | null
           queue_position?: number | null
           requested_at?: string | null
           status?: string
@@ -45,6 +48,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -67,6 +77,7 @@ export type Database = {
           due_date: string | null
           id: string
           isbn: string
+          organization_id: string | null
           status: string
           title: string
         }
@@ -80,6 +91,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           isbn: string
+          organization_id?: string | null
           status?: string
           title: string
         }
@@ -93,10 +105,19 @@ export type Database = {
           due_date?: string | null
           id?: string
           isbn?: string
+          organization_id?: string | null
           status?: string
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "books_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       borrowing_history: {
         Row: {
@@ -108,6 +129,7 @@ export type Database = {
           days_late: number | null
           fine_amount: number | null
           id: string
+          organization_id: string | null
           returned_at: string
           user_id: string
           was_late: boolean
@@ -121,6 +143,7 @@ export type Database = {
           days_late?: number | null
           fine_amount?: number | null
           id?: string
+          organization_id?: string | null
           returned_at?: string
           user_id: string
           was_late?: boolean
@@ -134,6 +157,7 @@ export type Database = {
           days_late?: number | null
           fine_amount?: number | null
           id?: string
+          organization_id?: string | null
           returned_at?: string
           user_id?: string
           was_late?: boolean
@@ -146,7 +170,35 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "borrowing_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -158,6 +210,7 @@ export type Database = {
           grade: string | null
           id: string
           organization: string | null
+          organization_id: string | null
           profile_picture_url: string | null
         }
         Insert: {
@@ -169,6 +222,7 @@ export type Database = {
           grade?: string | null
           id: string
           organization?: string | null
+          organization_id?: string | null
           profile_picture_url?: string | null
         }
         Update: {
@@ -180,9 +234,18 @@ export type Database = {
           grade?: string | null
           id?: string
           organization?: string | null
+          organization_id?: string | null
           profile_picture_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

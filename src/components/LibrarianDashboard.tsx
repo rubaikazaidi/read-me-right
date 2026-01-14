@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Book, BookStatus } from "@/types/book";
 import { Badge } from "@/components/ui/badge";
 import { AssignBookDialog } from "./AssignBookDialog";
@@ -42,6 +43,7 @@ export function LibrarianDashboard() {
   const [statusManagementOpen, setStatusManagementOpen] = useState(true);
   const [requestQueuesOpen, setRequestQueuesOpen] = useState(true);
   const { toast } = useToast();
+  const { organizationId } = useOrganization();
 
   // Sort books based on selected criteria
   const sortedBooks = [...books].sort((a, b) => {
@@ -305,6 +307,7 @@ export function LibrarianDashboard() {
           was_late: wasLate,
           days_late: daysLate,
           fine_amount: fineAmount,
+          organization_id: organizationId,
         });
 
       if (historyError) {
