@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Book } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
@@ -26,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { user, loading: authLoading, userRole, signOut } = useAuth();
+  const { organizationId } = useOrganization();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
@@ -177,6 +179,7 @@ const Index = () => {
         user_id: user.id,
         status: "pending",
         queue_position: queuePos || 1,
+        organization_id: organizationId,
       });
 
       if (error) throw error;

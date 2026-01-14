@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, Camera, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AddBookDialogProps {
@@ -25,6 +26,7 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { organizationId } = useOrganization();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +61,7 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
         category,
         status: "available",
         cover_image_url: finalCoverUrl || null,
+        organization_id: organizationId,
       });
 
       if (error) throw error;
