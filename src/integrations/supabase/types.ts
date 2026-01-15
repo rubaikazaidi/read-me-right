@@ -274,6 +274,7 @@ export type Database = {
         Args: { book_id_param: string }
         Returns: number
       }
+      get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       handle_book_request: {
         Args: { book_id_param: string; user_id_param: string }
         Returns: Json
