@@ -30,6 +30,16 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!organizationId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Organization not found. Please try logging out and back in.",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
