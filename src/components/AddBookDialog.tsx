@@ -156,6 +156,7 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
                 <SelectItem value="History">History</SelectItem>
                 <SelectItem value="Biography">Biography</SelectItem>
                 <SelectItem value="Technology">Technology</SelectItem>
+                <SelectItem value="Textbooks">Textbooks</SelectItem>
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
