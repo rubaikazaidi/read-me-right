@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List } from "lucide-react";
+import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
@@ -40,6 +41,7 @@ const Index = () => {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -334,6 +336,24 @@ const Index = () => {
                         <SelectItem value="oldest">Oldest First</SelectItem>
                       </SelectContent>
                     </Select>
+                    <div className="flex border rounded-md ml-2">
+                      <Button
+                        variant={viewMode === "grid" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-9 px-3 rounded-r-none"
+                        onClick={() => setViewMode("grid")}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-9 px-3 rounded-l-none"
+                        onClick={() => setViewMode("list")}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <TabsContent value={statusFilter}>
@@ -342,10 +362,22 @@ const Index = () => {
                         <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No books found</p>
                       </div>
-                    ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    ) : viewMode === "grid" ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {filteredBooks.map((book) => (
                           <BookCard 
+                            key={book.id} 
+                            book={book} 
+                            isLibrarian={true}
+                            onEdit={() => setEditingBook(book)}
+                            onViewDetails={() => setViewingBook(book)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {filteredBooks.map((book) => (
+                          <BookListItem 
                             key={book.id} 
                             book={book} 
                             isLibrarian={true}
@@ -448,6 +480,24 @@ const Index = () => {
                       <SelectItem value="oldest">Oldest First</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="flex border rounded-md ml-2">
+                    <Button
+                      variant={viewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-9 px-3 rounded-r-none"
+                      onClick={() => setViewMode("grid")}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-9 px-3 rounded-l-none"
+                      onClick={() => setViewMode("list")}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <TabsContent value={statusFilter} className="mt-6">
@@ -456,12 +506,28 @@ const Index = () => {
                       <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No books found</p>
                     </div>
-                  ) : (
+                  ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {filteredBooks.map((book) => {
                         const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
                         return (
                           <BookCard
+                            key={book.id}
+                            book={book}
+                            onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
+                            onLeaveQueue={handleLeaveQueue}
+                            isLibrarian={false}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {filteredBooks.map((book) => {
+                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        return (
+                          <BookListItem
                             key={book.id}
                             book={book}
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
