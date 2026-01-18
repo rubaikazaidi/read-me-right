@@ -12,10 +12,56 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting queue position update...');
+    // SECURITY: Require authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's auth token to verify identity and role
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.log('Authentication failed:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
+
+    // SECURITY: Verify user has librarian role
+    const { data: roleData, error: roleError } = await supabaseAuth
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'librarian')
+      .single();
+
+    if (roleError || !roleData) {
+      console.log('Authorization failed - not a librarian:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Librarian access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authorized librarian, starting queue position update...');
+
+    // Use service role for the actual update operation (bypasses RLS for cross-org updates)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get all pending book requests grouped by book
     const { data: requests, error: fetchError } = await supabase
@@ -64,7 +110,7 @@ Deno.serve(async (req) => {
 
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
-      console.log(`Updated ${updatePromises.length} queue positions`);
+      console.log(`Updated ${updatePromises.length} queue positions by librarian ${user.id}`);
     } else {
       console.log('All queue positions are already correct');
     }
