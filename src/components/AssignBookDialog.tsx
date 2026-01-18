@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { escapeILikePattern, isValidSearchTerm } from "@/lib/security";
 import {
   Dialog,
   DialogContent,
@@ -59,13 +60,25 @@ export function AssignBookDialog({
       return;
     }
 
+    if (!isValidSearchTerm(searchQuery)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid search term",
+        description: "Please use only letters, numbers, and basic punctuation",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Escape special ILIKE characters to prevent pattern injection
+      const safeSearchQuery = escapeILikePattern(searchQuery);
+      
       // Search for students by name or email
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email")
-        .or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        .or(`full_name.ilike.%${safeSearchQuery}%,email.ilike.%${safeSearchQuery}%`);
 
       if (error) throw error;
 
