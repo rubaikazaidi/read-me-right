@@ -47,9 +47,35 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
 
       // Upload file if provided
       if (coverFile) {
-        const fileExt = coverFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        // Validate file type
+        if (!coverFile.type.startsWith('image/')) {
+          toast({
+            variant: "destructive",
+            title: "Invalid file type",
+            description: "Please select an image file.",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (coverFile.size > maxSize) {
+          toast({
+            variant: "destructive",
+            title: "File too large",
+            description: "Please select an image smaller than 5MB.",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Use secure random names with validated extension
+        const fileExt = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const safeExt = allowedExtensions.includes(fileExt) ? fileExt : 'jpg';
+        const randomFileName = crypto.randomUUID();
+        const filePath = `${organizationId}/${randomFileName}.${safeExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('book-covers')
