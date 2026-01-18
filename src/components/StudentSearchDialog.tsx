@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users, Search, User, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EditStudentProfileDialog } from "@/components/EditStudentProfileDialog";
+import { escapeILikePattern, isValidSearchTerm } from "@/lib/security";
 
 interface StudentProfile {
   id: string;
@@ -32,10 +33,19 @@ const StudentSearchDialog = () => {
       setStudents([]);
       return;
     }
+
+    // Skip invalid search terms
+    if (!isValidSearchTerm(term)) {
+      setStudents([]);
+      return;
+    }
     
     setSearchLoading(true);
     
     try {
+      // Escape special ILIKE characters to prevent pattern injection
+      const safeTerm = escapeILikePattern(term);
+      
       // Get all student user IDs
       const { data: studentRoles } = await supabase
         .from("user_roles")
@@ -49,7 +59,7 @@ const StudentSearchDialog = () => {
         .from("profiles")
         .select("id, full_name, email, grade, organization, age, gr_number")
         .in("id", studentIds)
-        .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
+        .or(`full_name.ilike.%${safeTerm}%,email.ilike.%${safeTerm}%`);
 
       if (error) throw error;
       setStudents(data || []);
