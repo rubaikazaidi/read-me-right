@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,13 +26,56 @@ export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to get signed URL for private profile pictures
+  const getSignedProfilePictureUrl = useCallback(async (storedPath: string | null) => {
+    if (!storedPath) {
+      setProfilePictureUrl(null);
+      return;
+    }
+
+    try {
+      // Check if it's already a full URL (old public bucket format)
+      if (storedPath.startsWith('http')) {
+        // For backwards compatibility with old public URLs
+        setProfilePictureUrl(storedPath);
+        return;
+      }
+
+      // Get signed URL for private bucket (1 hour expiry)
+      const { data, error } = await supabase.storage
+        .from("profile-pictures")
+        .createSignedUrl(storedPath, 3600);
+
+      if (error) {
+        console.error("Error getting signed URL:", error);
+        setProfilePictureUrl(null);
+        return;
+      }
+
+      setProfilePictureUrl(data.signedUrl);
+    } catch (error) {
+      console.error("Error fetching profile picture:", error);
+      setProfilePictureUrl(null);
+    }
+  }, []);
 
   useEffect(() => {
     if (open && userId) {
       fetchProfile();
     }
   }, [open, userId]);
+
+  // Update signed URL when profile changes
+  useEffect(() => {
+    if (profile?.profile_picture_url) {
+      getSignedProfilePictureUrl(profile.profile_picture_url);
+    } else {
+      setProfilePictureUrl(null);
+    }
+  }, [profile?.profile_picture_url, getSignedProfilePictureUrl]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -87,31 +130,38 @@ export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
 
     setUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-pictures/${fileName}`;
+      // SECURITY: Use randomized file names to prevent enumeration
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || 'jpg';
+      const randomFileName = crypto.randomUUID();
+      // Store in user-specific folder for RLS policy compliance
+      const filePath = `${userId}/${randomFileName}.${fileExt}`;
 
-      // Upload to storage
+      // Upload to PRIVATE profile-pictures bucket (not public book-covers)
       const { error: uploadError } = await supabase.storage
-        .from("book-covers")
-        .upload(filePath, file);
+        .from("profile-pictures")
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("book-covers")
-        .getPublicUrl(filePath);
-
-      // Update profile
+      // Store the path (not the URL) in the database
+      // We'll generate signed URLs on-demand for viewing
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ profile_picture_url: publicUrl })
+        .update({ profile_picture_url: filePath })
         .eq("id", userId);
 
       if (updateError) throw updateError;
 
-      setProfile((prev) => prev ? { ...prev, profile_picture_url: publicUrl } : null);
+      // Get signed URL for immediate display
+      const { data: signedData } = await supabase.storage
+        .from("profile-pictures")
+        .createSignedUrl(filePath, 3600);
+
+      if (signedData?.signedUrl) {
+        setProfilePictureUrl(signedData.signedUrl);
+      }
+
+      setProfile((prev) => prev ? { ...prev, profile_picture_url: filePath } : null);
 
       toast({
         title: "Profile picture updated",
@@ -153,7 +203,7 @@ export const StudentProfileDialog = ({ userId }: StudentProfileDialogProps) => {
             <div className="flex flex-col items-center gap-3">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.profile_picture_url || undefined} alt={profile.full_name} />
+                  <AvatarImage src={profilePictureUrl || undefined} alt={profile.full_name} />
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                     {getInitials(profile.full_name)}
                   </AvatarFallback>
