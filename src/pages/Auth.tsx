@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Building2 } from "lucide-react";
@@ -20,7 +19,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"student" | "librarian">("student");
+  // SECURITY: Role is no longer selectable during signup
+  // All new users are students by default - librarian promotion requires admin action
   const [grade, setGrade] = useState("");
   const [age, setAge] = useState("");
   const [grNumber, setGrNumber] = useState("");
@@ -92,10 +92,10 @@ const Auth = () => {
       }
     };
 
-    if (!isLogin && role === "student") {
+    if (!isLogin) {
       fetchOrganizations();
     }
-  }, [isLogin, role]);
+  }, [isLogin]);
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,7 +190,7 @@ const Auth = () => {
         navigate("/");
       } else {
         // Validate student has selected an organization
-        if (role === "student" && !selectedOrganizationId) {
+        if (!selectedOrganizationId) {
           toast({
             variant: "destructive",
             title: "Organization required",
@@ -200,13 +200,16 @@ const Auth = () => {
           return;
         }
 
+        // SECURITY: Do not include role in signup metadata
+        // All users are assigned 'student' role by default in handle_new_user trigger
+        // Role promotion to librarian must be done through a separate secure process
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-              role: role,
+              // Note: role is NOT sent here - server always assigns 'student' by default
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -215,39 +218,29 @@ const Auth = () => {
         if (error) throw error;
 
         if (authData.user) {
-          if (role === "librarian") {
-            // Librarian needs to create organization
-            setPendingUserId(authData.user.id);
-            setShowOrgCreation(true);
-            toast({
-              title: "Account created!",
-              description: "Now let's set up your organization.",
+          // All users are students by default - create profile with selected organization
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .insert({
+              id: authData.user.id,
+              full_name: fullName,
+              email: email,
+              grade: grade || null,
+              organization_id: selectedOrganizationId,
+              age: age ? parseInt(age) : null,
+              gr_number: grNumber || null,
             });
-          } else {
-            // Student - create profile with selected organization
-            const { error: profileError } = await supabase
-              .from("profiles")
-              .insert({
-                id: authData.user.id,
-                full_name: fullName,
-                email: email,
-                grade: grade || null,
-                organization_id: selectedOrganizationId,
-                age: age ? parseInt(age) : null,
-                gr_number: grNumber || null,
-              });
 
-            if (profileError) {
-              console.error("Error creating student profile:", profileError);
-              throw profileError;
-            }
-
-            toast({
-              title: "Account created!",
-              description: "You have successfully signed up.",
-            });
-            navigate("/");
+          if (profileError) {
+            console.error("Error creating student profile:", profileError);
+            throw profileError;
           }
+
+          toast({
+            title: "Account created!",
+            description: "You have successfully signed up as a student.",
+          });
+          navigate("/");
         }
       }
     } catch (error: any) {
@@ -332,97 +325,69 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>I am a:</Label>
-                  <RadioGroup value={role} onValueChange={(value) => setRole(value as "student" | "librarian")}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="student" id="student" />
-                      <Label htmlFor="student" className="font-normal cursor-pointer">
-                        Student
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="librarian" id="librarian" />
-                      <Label htmlFor="librarian" className="font-normal cursor-pointer">
-                        Librarian
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
 
-                {/* Student-specific fields */}
-                {role === "student" && (
-                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground">Student Details</p>
-                    
-                    {/* Organization selection for students */}
-                    <div className="space-y-2">
-                      <Label htmlFor="organization">School/Organization *</Label>
-                      {organizations.length > 0 ? (
-                        <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select your organization" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {organizations.map((org) => (
-                              <SelectItem key={org.id} value={org.id}>
-                                {org.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
-                          No organizations available. A librarian must create an organization first.
-                        </p>
-                      )}
-                    </div>
+                {/* Student details - all new signups are students */}
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium text-muted-foreground">Student Details</p>
+                  
+                  {/* Organization selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="organization">School/Organization *</Label>
+                    {organizations.length > 0 ? (
+                      <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your organization" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map((org) => (
+                            <SelectItem key={org.id} value={org.id}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                        No organizations available. A librarian must create an organization first.
+                      </p>
+                    )}
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="grade">Grade</Label>
-                        <Input
-                          id="grade"
-                          type="text"
-                          placeholder="e.g., 10th"
-                          value={grade}
-                          onChange={(e) => setGrade(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="age">Age</Label>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="5"
-                          max="100"
-                          placeholder="e.g., 16"
-                          value={age}
-                          onChange={(e) => setAge(e.target.value)}
-                        />
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="grNumber">GR Number</Label>
+                      <Label htmlFor="grade">Grade</Label>
                       <Input
-                        id="grNumber"
+                        id="grade"
                         type="text"
-                        placeholder="e.g., GR-12345"
-                        value={grNumber}
-                        onChange={(e) => setGrNumber(e.target.value)}
+                        placeholder="e.g., 10th"
+                        value={grade}
+                        onChange={(e) => setGrade(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="age">Age</Label>
+                      <Input
+                        id="age"
+                        type="number"
+                        min="5"
+                        max="100"
+                        placeholder="e.g., 16"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
                       />
                     </div>
                   </div>
-                )}
-
-                {/* Librarian info */}
-                {role === "librarian" && (
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      As a librarian, you'll create a new organization after signing up. Students will then be able to join your organization.
-                    </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="grNumber">GR Number</Label>
+                    <Input
+                      id="grNumber"
+                      type="text"
+                      placeholder="e.g., GR-12345"
+                      value={grNumber}
+                      onChange={(e) => setGrNumber(e.target.value)}
+                    />
                   </div>
-                )}
+                </div>
               </>
             )}
             <div className="space-y-2">
@@ -451,7 +416,7 @@ const Auth = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || (role === "student" && !isLogin && organizations.length === 0)}
+              disabled={loading || (!isLogin && organizations.length === 0)}
             >
               {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
             </Button>
