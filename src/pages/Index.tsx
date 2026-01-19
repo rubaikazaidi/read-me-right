@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { user, loading: authLoading, userRole, signOut } = useAuth();
-  const { organizationId } = useOrganization();
+  const { organization, organizationId } = useOrganization();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
@@ -265,9 +265,11 @@ const Index = () => {
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {organization?.name ? `${organization.name} Library` : "Library Management"}
+                  </h1>
                   <p className="text-sm text-muted-foreground">
-                    {userRole === "student" ? `Student: ${userName}` : "Librarian"}
+                    {userRole === "student" ? `Student: ${userName}` : `Librarian: ${userName}`}
                   </p>
                 </div>
               </div>
