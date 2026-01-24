@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, AlertCircle, QrCode, Barcode } from "lucide-react";
+import { Search, BookOpen, AlertCircle, QrCode, Barcode, RotateCcw, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScanType } from "./QRCodeScanner";
+import { differenceInDays } from "date-fns";
 
 interface Profile {
   id: string;
@@ -31,6 +32,9 @@ interface BookInfo {
   isbn: string;
   status: string;
   borrowed_by: string | null;
+  borrowed_at: string | null;
+  due_date: string | null;
+  organization_id: string | null;
 }
 
 interface ScanIssueBookDialogProps {
@@ -53,7 +57,9 @@ export function ScanIssueBookDialog({
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [issuing, setIssuing] = useState(false);
+  const [returning, setReturning] = useState(false);
   const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
+  const [borrowerInfo, setBorrowerInfo] = useState<Profile | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookError, setBookError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -66,23 +72,23 @@ export function ScanIssueBookDialog({
       setStudents([]);
       setSelectedStudent(null);
       setBookError(null);
+      setBorrowerInfo(null);
     }
   }, [open, scanValue, scanType]);
 
   const fetchBookInfo = async () => {
     setBookLoading(true);
     setBookError(null);
+    setBorrowerInfo(null);
     
     try {
       let query = supabase
         .from("books")
-        .select("id, title, author, isbn, status, borrowed_by");
+        .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id");
       
       if (scanType === "qr") {
-        // Search by book ID (UUID)
         query = query.eq("id", scanValue);
       } else {
-        // Search by ISBN
         query = query.eq("isbn", scanValue);
       }
       
@@ -112,12 +118,17 @@ export function ScanIssueBookDialog({
       
       setBookInfo(data);
 
-      if (data.status !== "available") {
-        toast({
-          variant: "destructive",
-          title: "Book Not Available",
-          description: `This book is currently ${data.status}. Please mark it as returned first.`,
-        });
+      // If book is borrowed/late, fetch borrower info
+      if ((data.status === "borrowed" || data.status === "late") && data.borrowed_by) {
+        const { data: borrower } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, gr_number, grade")
+          .eq("id", data.borrowed_by)
+          .maybeSingle();
+        
+        if (borrower) {
+          setBorrowerInfo(borrower);
+        }
       }
     } catch (error: any) {
       console.error("Error fetching book:", error);
@@ -156,7 +167,6 @@ export function ScanIssueBookDialog({
     try {
       const safeSearchQuery = escapeILikePattern(searchQuery);
 
-      // Search for students by name, email, or GR number
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email, gr_number, grade")
@@ -164,7 +174,6 @@ export function ScanIssueBookDialog({
 
       if (error) throw error;
 
-      // Filter to only show students
       const studentIds: string[] = [];
       if (data && data.length > 0) {
         const { data: rolesData } = await supabase
@@ -250,16 +259,93 @@ export function ScanIssueBookDialog({
     }
   };
 
+  const handleReturn = async () => {
+    if (!bookInfo || !bookInfo.borrowed_by || !bookInfo.borrowed_at) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Cannot return this book - missing borrowing information.",
+      });
+      return;
+    }
+
+    setReturning(true);
+    try {
+      const now = new Date();
+      const dueDate = bookInfo.due_date ? new Date(bookInfo.due_date) : null;
+      
+      // Calculate if late and days late
+      const wasLate = dueDate ? now > dueDate : false;
+      const daysLate = wasLate && dueDate ? differenceInDays(now, dueDate) : 0;
+      
+      // Simple fine calculation (can be enhanced with fine settings later)
+      const fineAmount = wasLate ? daysLate * 5 : 0; // ₹5 per day late
+
+      // Create borrowing history record
+      const { error: historyError } = await supabase
+        .from("borrowing_history")
+        .insert({
+          book_id: bookInfo.id,
+          user_id: bookInfo.borrowed_by,
+          book_title: bookInfo.title,
+          book_author: bookInfo.author,
+          borrowed_at: bookInfo.borrowed_at,
+          returned_at: now.toISOString(),
+          was_late: wasLate,
+          days_late: daysLate,
+          fine_amount: fineAmount,
+          organization_id: bookInfo.organization_id,
+        });
+
+      if (historyError) throw historyError;
+
+      // Update book status to available
+      const { error: updateError } = await supabase
+        .from("books")
+        .update({
+          status: "available",
+          borrowed_by: null,
+          borrowed_at: null,
+          due_date: null,
+        })
+        .eq("id", bookInfo.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Book Returned Successfully",
+        description: `"${bookInfo.title}" has been returned${wasLate ? ` (${daysLate} days late, Fine: ₹${fineAmount})` : ""}`,
+      });
+
+      onIssued(); // Refresh the book list
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Error returning book:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to return book",
+      });
+    } finally {
+      setReturning(false);
+    }
+  };
+
+  const isBookBorrowed = bookInfo?.status === "borrowed" || bookInfo?.status === "late";
+  const isBookAvailable = bookInfo?.status === "available";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Issue Book to Student
+            {isBookBorrowed ? "Return or Reassign Book" : "Issue Book to Student"}
           </DialogTitle>
           <DialogDescription>
-            Enter student details to issue this book.
+            {isBookBorrowed 
+              ? "This book is currently borrowed. You can return it or view borrower details."
+              : "Enter student details to issue this book."}
           </DialogDescription>
         </DialogHeader>
 
@@ -297,7 +383,7 @@ export function ScanIssueBookDialog({
                     <p className="text-xs text-muted-foreground mt-1">ISBN: {bookInfo.isbn}</p>
                   )}
                 </div>
-                <Badge variant={bookInfo.status === "available" ? "default" : "destructive"}>
+                <Badge variant={bookInfo.status === "available" ? "default" : bookInfo.status === "late" ? "destructive" : "secondary"}>
                   {bookInfo.status}
                 </Badge>
               </div>
@@ -312,8 +398,45 @@ export function ScanIssueBookDialog({
             </div>
           )}
 
-          {/* Only show student search if book is available */}
-          {bookInfo?.status === "available" && (
+          {/* Show borrower info and return option if book is borrowed/late */}
+          {isBookBorrowed && borrowerInfo && (
+            <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-md space-y-3">
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-orange-800 dark:text-orange-200">Currently Borrowed By:</p>
+                  <p className="font-semibold text-orange-900 dark:text-orange-100">{borrowerInfo.full_name}</p>
+                  {borrowerInfo.gr_number && (
+                    <p className="text-sm text-orange-700 dark:text-orange-300">GR: {borrowerInfo.gr_number}</p>
+                  )}
+                  {borrowerInfo.grade && (
+                    <p className="text-sm text-orange-700 dark:text-orange-300">Grade: {borrowerInfo.grade}</p>
+                  )}
+                  {borrowerInfo.email && (
+                    <p className="text-sm text-orange-600 dark:text-orange-400">{borrowerInfo.email}</p>
+                  )}
+                  {bookInfo?.due_date && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                      Due: {new Date(bookInfo.due_date).toLocaleDateString()}
+                      {bookInfo.status === "late" && " (OVERDUE)"}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleReturn} 
+                disabled={returning}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {returning ? "Returning..." : "Return Book to Library"}
+              </Button>
+            </div>
+          )}
+
+          {/* Show student search only if book is available */}
+          {isBookAvailable && (
             <>
               <div className="space-y-2">
                 <Label>Search Student (by name, email, or GR number)</Label>
@@ -373,9 +496,9 @@ export function ScanIssueBookDialog({
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {isBookBorrowed ? "Close" : "Cancel"}
             </Button>
-            {bookInfo?.status === "available" && (
+            {isBookAvailable && (
               <Button onClick={handleIssue} disabled={!selectedStudent || issuing}>
                 {issuing ? "Issuing..." : "Issue Book"}
               </Button>
