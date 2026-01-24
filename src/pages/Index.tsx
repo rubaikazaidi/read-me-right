@@ -15,11 +15,13 @@ import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
 import { StudentProfileDialog } from "@/components/StudentProfileDialog";
 import { BookRecommendations } from "@/components/BookRecommendations";
+import { QRCodeScanner, ScanResult, ScanType } from "@/components/QRCodeScanner";
+import { ScanIssueBookDialog } from "@/components/ScanIssueBookDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine } from "lucide-react";
 import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -42,6 +44,14 @@ const Index = () => {
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  
+  // QR Scanner states
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [scanIssueDialogOpen, setScanIssueDialogOpen] = useState(false);
+  const [scannedValue, setScannedValue] = useState<string>("");
+  const [scannedType, setScannedType] = useState<ScanType>("qr");
+  const [addBookDialogOpen, setAddBookDialogOpen] = useState(false);
+  const [scannedIsbnForAdd, setScannedIsbnForAdd] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -235,6 +245,19 @@ const Index = () => {
     navigate("/auth");
   };
 
+  // Handle QR code or barcode scan result
+  const handleScanResult = (result: ScanResult) => {
+    setScannedType(result.type);
+    setScannedValue(result.value);
+    setScanIssueDialogOpen(true);
+  };
+
+  // Handle adding a book with scanned ISBN
+  const handleAddBookFromScan = (isbn: string) => {
+    setScannedIsbnForAdd(isbn);
+    setAddBookDialogOpen(true);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -300,11 +323,15 @@ const Index = () => {
               />
             </div>
             {userRole === "librarian" && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <StudentSearchDialog />
                 <ExportBooksButton />
                 <FineSettingsDialog />
                 <AddBookDialog onBookAdded={handleBookAdded} />
+                <Button onClick={() => setQrScannerOpen(true)} variant="outline">
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Scan Book
+                </Button>
               </div>
             )}
           </div>
@@ -561,6 +588,39 @@ const Index = () => {
           book={viewingBook}
           open={!!viewingBook}
           onOpenChange={(open) => !open && setViewingBook(null)}
+        />
+
+        {/* QR Scanner and Issue Book dialogs */}
+        <QRCodeScanner
+          open={qrScannerOpen}
+          onOpenChange={setQrScannerOpen}
+          onScan={handleScanResult}
+        />
+
+        <ScanIssueBookDialog
+          open={scanIssueDialogOpen}
+          onOpenChange={setScanIssueDialogOpen}
+          scanValue={scannedValue}
+          scanType={scannedType}
+          onIssued={() => {
+            fetchBooks();
+            setScanIssueDialogOpen(false);
+          }}
+          onAddBook={handleAddBookFromScan}
+        />
+
+        <AddBookDialog
+          onBookAdded={() => {
+            handleBookAdded();
+            setAddBookDialogOpen(false);
+            setScannedIsbnForAdd("");
+          }}
+          initialIsbn={scannedIsbnForAdd}
+          externalOpen={addBookDialogOpen}
+          onExternalOpenChange={(open) => {
+            setAddBookDialogOpen(open);
+            if (!open) setScannedIsbnForAdd("");
+          }}
         />
       </div>
     </LibrarySidebar>
