@@ -11,8 +11,8 @@ import { AssignBookDialog } from "./AssignBookDialog";
 import { calculateFine } from "./FineSettingsDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronRight, ScanLine, QrCode } from "lucide-react";
-import { QRCodeScanner } from "./QRCodeScanner";
+import { ChevronDown, ChevronRight, ScanLine, QrCode, Barcode } from "lucide-react";
+import { QRCodeScanner, ScanResult, ScanType } from "./QRCodeScanner";
 import { BookQRCode } from "./BookQRCode";
 import { ScanIssueBookDialog } from "./ScanIssueBookDialog";
 
@@ -48,15 +48,17 @@ export function LibrarianDashboard() {
   // QR Code states
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [scanIssueDialogOpen, setScanIssueDialogOpen] = useState(false);
-  const [scannedBookId, setScannedBookId] = useState<string>("");
+  const [scannedValue, setScannedValue] = useState<string>("");
+  const [scannedType, setScannedType] = useState<ScanType>("qr");
   const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false);
   const [selectedBookForQR, setSelectedBookForQR] = useState<BookWithBorrower | null>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
-  // Handle QR code scan result
-  const handleQRScan = (bookId: string) => {
-    setScannedBookId(bookId);
+  // Handle QR code or barcode scan result
+  const handleScanResult = (result: ScanResult) => {
+    setScannedType(result.type);
+    setScannedValue(result.value);
     setScanIssueDialogOpen(true);
   };
 
@@ -757,18 +759,21 @@ export function LibrarianDashboard() {
         />
       )}
 
-      {/* QR Code Scanner Dialog */}
+      {/* QR Code / Barcode Scanner Dialog */}
       <QRCodeScanner
         open={qrScannerOpen}
         onOpenChange={setQrScannerOpen}
-        onScan={handleQRScan}
+        onScan={handleScanResult}
+        title="Scan Book Code"
+        description="Point your camera at a QR code or ISBN barcode on the book."
       />
 
       {/* Scan Issue Book Dialog */}
       <ScanIssueBookDialog
         open={scanIssueDialogOpen}
         onOpenChange={setScanIssueDialogOpen}
-        bookId={scannedBookId}
+        scanType={scannedType}
+        scanValue={scannedValue}
         onIssued={() => {
           fetchBooks();
           fetchRequests();
