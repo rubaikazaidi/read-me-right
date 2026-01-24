@@ -80,11 +80,13 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
-  // Fetch organizations for student signup
+  // Fetch organizations for student signup using the public view
+  // This view only exposes id and name, not the created_by UUID
   useEffect(() => {
     const fetchOrganizations = async () => {
+      // Use the organizations_public view which only exposes safe columns
       const { data, error } = await supabase
-        .from("organizations")
+        .from("organizations_public")
         .select("id, name")
         .order("name");
       
