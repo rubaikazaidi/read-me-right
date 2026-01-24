@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Camera, Link as LinkIcon } from "lucide-react";
+import { Plus, Upload, Camera, Link as LinkIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
@@ -31,20 +31,91 @@ export function AddBookDialog({
   const [coverUrl, setCoverUrl] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
+
+  // Fetch book info from Google Books API
+  const fetchBookInfoFromIsbn = async (isbnToSearch: string) => {
+    if (!isbnToSearch || isbnToSearch.length < 10) return;
+    
+    setFetchingBookInfo(true);
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbnToSearch)}`
+      );
+      
+      if (!response.ok) throw new Error("Failed to fetch book info");
+      
+      const data = await response.json();
+      
+      if (data.totalItems > 0 && data.items?.[0]?.volumeInfo) {
+        const bookInfo = data.items[0].volumeInfo;
+        
+        if (bookInfo.title) {
+          setTitle(bookInfo.title);
+        }
+        
+        if (bookInfo.authors?.length > 0) {
+          setAuthor(bookInfo.authors.join(", "));
+        }
+        
+        // Auto-set cover image if available
+        if (bookInfo.imageLinks?.thumbnail) {
+          // Use higher quality image if available
+          const coverImage = bookInfo.imageLinks.large || 
+                            bookInfo.imageLinks.medium || 
+                            bookInfo.imageLinks.small || 
+                            bookInfo.imageLinks.thumbnail;
+          setCoverUrl(coverImage.replace("http://", "https://"));
+        }
+        
+        // Try to match category
+        if (bookInfo.categories?.length > 0) {
+          const bookCategory = bookInfo.categories[0].toLowerCase();
+          if (bookCategory.includes("fiction")) setCategory("Fiction");
+          else if (bookCategory.includes("science")) setCategory("Science");
+          else if (bookCategory.includes("history")) setCategory("History");
+          else if (bookCategory.includes("biography")) setCategory("Biography");
+          else if (bookCategory.includes("technology") || bookCategory.includes("computer")) setCategory("Technology");
+          else if (bookCategory.includes("education") || bookCategory.includes("textbook")) setCategory("Textbooks");
+          else setCategory("Other");
+        }
+        
+        toast({
+          title: "Book info found!",
+          description: `Auto-filled details for "${bookInfo.title}"`,
+        });
+      } else {
+        toast({
+          title: "Book not found",
+          description: "No book info found for this ISBN. Please enter details manually.",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching book info:", error);
+      toast({
+        variant: "destructive",
+        title: "Lookup failed",
+        description: "Could not fetch book info. Please enter details manually.",
+      });
+    } finally {
+      setFetchingBookInfo(false);
+    }
+  };
 
   // Use external control if provided, otherwise internal
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
   const setOpen = isControlled ? (onExternalOpenChange || (() => {})) : setInternalOpen;
 
-  // Set initial ISBN when dialog opens with it
+  // Set initial ISBN and fetch book info when dialog opens with it
   useEffect(() => {
     if (open && initialIsbn) {
       setIsbn(initialIsbn);
+      fetchBookInfoFromIsbn(initialIsbn);
     }
   }, [open, initialIsbn]);
 
@@ -158,6 +229,14 @@ export function AddBookDialog({
         <DialogHeader>
           <DialogTitle>Add New Book</DialogTitle>
         </DialogHeader>
+        
+        {fetchingBookInfo && (
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm text-muted-foreground">Looking up book details...</span>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -165,8 +244,9 @@ export function AddBookDialog({
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Book title"
+              placeholder={fetchingBookInfo ? "Loading..." : "Book title"}
               required
+              disabled={fetchingBookInfo}
             />
           </div>
           <div className="space-y-2">
@@ -175,8 +255,9 @@ export function AddBookDialog({
               id="author"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Author name"
+              placeholder={fetchingBookInfo ? "Loading..." : "Author name"}
               required
+              disabled={fetchingBookInfo}
             />
           </div>
           <div className="space-y-2">
@@ -187,6 +268,7 @@ export function AddBookDialog({
               onChange={(e) => setIsbn(e.target.value)}
               placeholder="ISBN number"
               required
+              disabled={fetchingBookInfo}
             />
           </div>
           <div className="space-y-2">
