@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, AlertCircle } from "lucide-react";
+import { Search, BookOpen, AlertCircle, QrCode, Barcode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ScanType } from "./QRCodeScanner";
 
 interface Profile {
   id: string;
@@ -27,6 +28,7 @@ interface BookInfo {
   id: string;
   title: string;
   author: string;
+  isbn: string;
   status: string;
   borrowed_by: string | null;
 }
@@ -34,14 +36,16 @@ interface BookInfo {
 interface ScanIssueBookDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  bookId: string;
+  scanType: ScanType;
+  scanValue: string;
   onIssued: () => void;
 }
 
 export function ScanIssueBookDialog({
   open,
   onOpenChange,
-  bookId,
+  scanType,
+  scanValue,
   onIssued,
 }: ScanIssueBookDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,28 +55,61 @@ export function ScanIssueBookDialog({
   const [issuing, setIssuing] = useState(false);
   const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
+  const [bookError, setBookError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch book info when dialog opens
   useEffect(() => {
-    if (open && bookId) {
+    if (open && scanValue) {
       fetchBookInfo();
       setSearchQuery("");
       setStudents([]);
       setSelectedStudent(null);
+      setBookError(null);
     }
-  }, [open, bookId]);
+  }, [open, scanValue, scanType]);
 
   const fetchBookInfo = async () => {
     setBookLoading(true);
+    setBookError(null);
+    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("books")
-        .select("id, title, author, status, borrowed_by")
-        .eq("id", bookId)
-        .single();
+        .select("id, title, author, isbn, status, borrowed_by");
+      
+      if (scanType === "qr") {
+        // Search by book ID (UUID)
+        query = query.eq("id", scanValue);
+      } else {
+        // Search by ISBN
+        query = query.eq("isbn", scanValue);
+      }
+      
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
+      
+      if (!data) {
+        if (scanType === "isbn") {
+          setBookError(`No book found with ISBN: ${scanValue}`);
+          toast({
+            variant: "destructive",
+            title: "Book Not Found",
+            description: `No book in your library matches ISBN: ${scanValue}. Please add this book first.`,
+          });
+        } else {
+          setBookError("Book not found or invalid QR code.");
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Book not found or invalid QR code.",
+          });
+        }
+        setBookInfo(null);
+        return;
+      }
+      
       setBookInfo(data);
 
       if (data.status !== "available") {
@@ -83,10 +120,12 @@ export function ScanIssueBookDialog({
         });
       }
     } catch (error: any) {
+      console.error("Error fetching book:", error);
+      setBookError("Failed to fetch book information.");
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Book not found or invalid QR code.",
+        description: "Failed to fetch book information.",
       });
       setBookInfo(null);
     } finally {
@@ -189,7 +228,7 @@ export function ScanIssueBookDialog({
           borrowed_at: now.toISOString(),
           due_date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         })
-        .eq("id", bookId);
+        .eq("id", bookInfo.id);
 
       if (error) throw error;
 
@@ -225,6 +264,23 @@ export function ScanIssueBookDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Scan type indicator */}
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              {scanType === "qr" ? (
+                <>
+                  <QrCode className="h-3 w-3" />
+                  QR Code
+                </>
+              ) : (
+                <>
+                  <Barcode className="h-3 w-3" />
+                  ISBN: {scanValue}
+                </>
+              )}
+            </Badge>
+          </div>
+
           {/* Book Info Section */}
           {bookLoading ? (
             <div className="p-4 bg-muted rounded-md animate-pulse">
@@ -237,6 +293,9 @@ export function ScanIssueBookDialog({
                 <div>
                   <p className="font-semibold">{bookInfo.title}</p>
                   <p className="text-sm text-muted-foreground">by {bookInfo.author}</p>
+                  {bookInfo.isbn && (
+                    <p className="text-xs text-muted-foreground mt-1">ISBN: {bookInfo.isbn}</p>
+                  )}
                 </div>
                 <Badge variant={bookInfo.status === "available" ? "default" : "destructive"}>
                   {bookInfo.status}
@@ -245,8 +304,11 @@ export function ScanIssueBookDialog({
             </div>
           ) : (
             <div className="p-4 bg-destructive/10 rounded-md flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              <p>Book not found</p>
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Book not found</p>
+                {bookError && <p className="text-sm">{bookError}</p>}
+              </div>
             </div>
           )}
 
