@@ -15,6 +15,7 @@ import { ChevronDown, ChevronRight, ScanLine, QrCode, Barcode } from "lucide-rea
 import { QRCodeScanner, ScanResult, ScanType } from "./QRCodeScanner";
 import { BookQRCode } from "./BookQRCode";
 import { ScanIssueBookDialog } from "./ScanIssueBookDialog";
+import { AddBookDialog } from "./AddBookDialog";
 
 interface BookRequest {
   id: string;
@@ -52,8 +53,17 @@ export function LibrarianDashboard() {
   const [scannedType, setScannedType] = useState<ScanType>("qr");
   const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false);
   const [selectedBookForQR, setSelectedBookForQR] = useState<BookWithBorrower | null>(null);
+  // Add book dialog states
+  const [addBookDialogOpen, setAddBookDialogOpen] = useState(false);
+  const [scannedIsbnForAdd, setScannedIsbnForAdd] = useState<string>("");
   const { toast } = useToast();
   const { organizationId } = useOrganization();
+
+  // Handle adding a book with scanned ISBN
+  const handleAddBookFromScan = (isbn: string) => {
+    setScannedIsbnForAdd(isbn);
+    setAddBookDialogOpen(true);
+  };
 
   // Handle QR code or barcode scan result
   const handleScanResult = (result: ScanResult) => {
@@ -777,6 +787,22 @@ export function LibrarianDashboard() {
         onIssued={() => {
           fetchBooks();
           fetchRequests();
+        }}
+        onAddBook={handleAddBookFromScan}
+      />
+
+      {/* Add Book Dialog (from scan) */}
+      <AddBookDialog
+        onBookAdded={() => {
+          fetchBooks();
+          setAddBookDialogOpen(false);
+          setScannedIsbnForAdd("");
+        }}
+        initialIsbn={scannedIsbnForAdd}
+        externalOpen={addBookDialogOpen}
+        onExternalOpenChange={(open) => {
+          setAddBookDialogOpen(open);
+          if (!open) setScannedIsbnForAdd("");
         }}
       />
 

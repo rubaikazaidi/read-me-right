@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AddBookDialogProps {
   onBookAdded: () => void;
+  initialIsbn?: string;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddBookDialog({ 
+  onBookAdded, 
+  initialIsbn,
+  externalOpen,
+  onExternalOpenChange 
+}: AddBookDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [isbn, setIsbn] = useState("");
@@ -27,6 +35,18 @@ export function AddBookDialog({ onBookAdded }: AddBookDialogProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
+
+  // Use external control if provided, otherwise internal
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? (onExternalOpenChange || (() => {})) : setInternalOpen;
+
+  // Set initial ISBN when dialog opens with it
+  useEffect(() => {
+    if (open && initialIsbn) {
+      setIsbn(initialIsbn);
+    }
+  }, [open, initialIsbn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

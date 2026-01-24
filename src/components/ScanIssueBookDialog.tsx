@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, AlertCircle, QrCode, Barcode, RotateCcw, User } from "lucide-react";
+import { Search, BookOpen, AlertCircle, QrCode, Barcode, RotateCcw, User, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScanType } from "./QRCodeScanner";
 import { differenceInDays } from "date-fns";
@@ -43,6 +43,7 @@ interface ScanIssueBookDialogProps {
   scanType: ScanType;
   scanValue: string;
   onIssued: () => void;
+  onAddBook?: (isbn: string) => void;
 }
 
 export function ScanIssueBookDialog({
@@ -51,6 +52,7 @@ export function ScanIssueBookDialog({
   scanType,
   scanValue,
   onIssued,
+  onAddBook,
 }: ScanIssueBookDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<Profile[]>([]);
@@ -389,12 +391,27 @@ export function ScanIssueBookDialog({
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-destructive/10 rounded-md flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Book not found</p>
-                {bookError && <p className="text-sm">{bookError}</p>}
+            <div className="p-4 bg-destructive/10 rounded-md space-y-3">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Book not found</p>
+                  {bookError && <p className="text-sm">{bookError}</p>}
+                </div>
               </div>
+              {scanType === "isbn" && onAddBook && (
+                <Button 
+                  onClick={() => {
+                    onAddBook(scanValue);
+                    onOpenChange(false);
+                  }}
+                  className="w-full"
+                  variant="default"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add This Book to Library
+                </Button>
+              )}
             </div>
           )}
 
