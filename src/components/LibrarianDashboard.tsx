@@ -11,7 +11,10 @@ import { AssignBookDialog } from "./AssignBookDialog";
 import { calculateFine } from "./FineSettingsDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ScanLine, QrCode } from "lucide-react";
+import { QRCodeScanner } from "./QRCodeScanner";
+import { BookQRCode } from "./BookQRCode";
+import { ScanIssueBookDialog } from "./ScanIssueBookDialog";
 
 interface BookRequest {
   id: string;
@@ -42,8 +45,26 @@ export function LibrarianDashboard() {
   const [bookSortBy, setBookSortBy] = useState<string>("title-asc");
   const [statusManagementOpen, setStatusManagementOpen] = useState(true);
   const [requestQueuesOpen, setRequestQueuesOpen] = useState(true);
+  // QR Code states
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [scanIssueDialogOpen, setScanIssueDialogOpen] = useState(false);
+  const [scannedBookId, setScannedBookId] = useState<string>("");
+  const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false);
+  const [selectedBookForQR, setSelectedBookForQR] = useState<BookWithBorrower | null>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
+
+  // Handle QR code scan result
+  const handleQRScan = (bookId: string) => {
+    setScannedBookId(bookId);
+    setScanIssueDialogOpen(true);
+  };
+
+  // Open QR code dialog for a specific book
+  const handleShowQRCode = (book: BookWithBorrower) => {
+    setSelectedBookForQR(book);
+    setQrCodeDialogOpen(true);
+  };
 
   // Sort books based on selected criteria
   const sortedBooks = [...books].sort((a, b) => {
@@ -484,6 +505,14 @@ export function LibrarianDashboard() {
             )}
           </div>
           <div className="flex gap-2 items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleShowQRCode(book)}
+              title="Show QR Code"
+            >
+              <QrCode className="h-4 w-4" />
+            </Button>
             {(book.status === "borrowed" || book.status === "late") && (
               <Button
                 variant="outline"
@@ -527,6 +556,27 @@ export function LibrarianDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* QR Scanner Button */}
+      <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <ScanLine className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Quick Issue Book</h3>
+                <p className="text-sm text-muted-foreground">Scan a book's QR code to quickly issue it to a student</p>
+              </div>
+            </div>
+            <Button onClick={() => setQrScannerOpen(true)} size="lg">
+              <ScanLine className="h-4 w-4 mr-2" />
+              Scan QR Code
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Book Status Management - Collapsible */}
       <Collapsible open={statusManagementOpen} onOpenChange={setStatusManagementOpen}>
         <Card>
@@ -704,6 +754,35 @@ export function LibrarianDashboard() {
           bookId={bookToAssign.id}
           bookTitle={bookToAssign.title}
           onAssigned={handleAssignComplete}
+        />
+      )}
+
+      {/* QR Code Scanner Dialog */}
+      <QRCodeScanner
+        open={qrScannerOpen}
+        onOpenChange={setQrScannerOpen}
+        onScan={handleQRScan}
+      />
+
+      {/* Scan Issue Book Dialog */}
+      <ScanIssueBookDialog
+        open={scanIssueDialogOpen}
+        onOpenChange={setScanIssueDialogOpen}
+        bookId={scannedBookId}
+        onIssued={() => {
+          fetchBooks();
+          fetchRequests();
+        }}
+      />
+
+      {/* Book QR Code Dialog */}
+      {selectedBookForQR && (
+        <BookQRCode
+          open={qrCodeDialogOpen}
+          onOpenChange={setQrCodeDialogOpen}
+          bookId={selectedBookForQR.id}
+          bookTitle={selectedBookForQR.title}
+          bookAuthor={selectedBookForQR.author}
         />
       )}
     </div>
