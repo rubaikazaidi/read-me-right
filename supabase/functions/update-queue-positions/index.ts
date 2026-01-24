@@ -58,16 +58,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Authorized librarian, starting queue position update...');
+    // SECURITY: Fetch the librarian's organization_id to enforce isolation
+    const { data: profileData, error: profileError } = await supabaseAuth
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single();
 
-    // Use service role for the actual update operation (bypasses RLS for cross-org updates)
+    if (profileError || !profileData?.organization_id) {
+      console.log('Failed to get librarian organization:', profileError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unable to determine organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userOrgId = profileData.organization_id;
+    console.log(`Authorized librarian ${user.id} from organization ${userOrgId}, starting queue position update...`);
+
+    // Use service role for the actual update operation (needed to batch update)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get all pending book requests grouped by book
+    // SECURITY: Only get pending book requests for the librarian's organization
     const { data: requests, error: fetchError } = await supabase
       .from('book_requests')
-      .select('id, book_id, queue_position, requested_at')
+      .select('id, book_id, queue_position, requested_at, organization_id')
       .eq('status', 'pending')
+      .eq('organization_id', userOrgId) // SECURITY: Organization isolation
       .order('book_id')
       .order('requested_at');
 
@@ -77,7 +94,7 @@ Deno.serve(async (req) => {
     }
 
     if (!requests || requests.length === 0) {
-      console.log('No pending requests to update');
+      console.log(`No pending requests to update for organization ${userOrgId}`);
       return new Response(
         JSON.stringify({ message: 'No pending requests to update' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -110,9 +127,9 @@ Deno.serve(async (req) => {
 
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
-      console.log(`Updated ${updatePromises.length} queue positions by librarian ${user.id}`);
+      console.log(`Updated ${updatePromises.length} queue positions by librarian ${user.id} for organization ${userOrgId}`);
     } else {
-      console.log('All queue positions are already correct');
+      console.log(`All queue positions are already correct for organization ${userOrgId}`);
     }
 
     return new Response(
