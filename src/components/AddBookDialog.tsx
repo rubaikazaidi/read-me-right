@@ -37,63 +37,111 @@ export function AddBookDialog({
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
-  // Fetch book info from Google Books API
+  // Fetch book info from Open Library API (primary) with Google Books as fallback
   const fetchBookInfoFromIsbn = async (isbnToSearch: string) => {
     if (!isbnToSearch || isbnToSearch.length < 10) return;
     
     setFetchingBookInfo(true);
     try {
-      const response = await fetch(
+      // Try Open Library API first (more reliable, no quota limits)
+      const openLibResponse = await fetch(
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(isbnToSearch)}&format=json&jscmd=data`
+      );
+      
+      if (openLibResponse.ok) {
+        const openLibData = await openLibResponse.json();
+        const bookKey = `ISBN:${isbnToSearch}`;
+        
+        if (openLibData[bookKey]) {
+          const bookInfo = openLibData[bookKey];
+          
+          if (bookInfo.title) {
+            setTitle(bookInfo.title);
+          }
+          
+          if (bookInfo.authors?.length > 0) {
+            setAuthor(bookInfo.authors.map((a: { name: string }) => a.name).join(", "));
+          }
+          
+          // Auto-set cover image if available
+          if (bookInfo.cover?.large || bookInfo.cover?.medium || bookInfo.cover?.small) {
+            const coverImage = bookInfo.cover.large || bookInfo.cover.medium || bookInfo.cover.small;
+            setCoverUrl(coverImage.replace("http://", "https://"));
+          }
+          
+          // Try to match category from subjects
+          if (bookInfo.subjects?.length > 0) {
+            const subjectName = bookInfo.subjects[0].name?.toLowerCase() || "";
+            if (subjectName.includes("fiction")) setCategory("Fiction");
+            else if (subjectName.includes("science")) setCategory("Science");
+            else if (subjectName.includes("history")) setCategory("History");
+            else if (subjectName.includes("biography")) setCategory("Biography");
+            else if (subjectName.includes("technology") || subjectName.includes("computer")) setCategory("Technology");
+            else if (subjectName.includes("education") || subjectName.includes("textbook")) setCategory("Textbooks");
+            else setCategory("Other");
+          }
+          
+          toast({
+            title: "Book info found!",
+            description: `Auto-filled details for "${bookInfo.title}"`,
+          });
+          setFetchingBookInfo(false);
+          return;
+        }
+      }
+
+      // Fallback to Google Books API
+      const googleResponse = await fetch(
         `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbnToSearch)}`
       );
       
-      if (!response.ok) throw new Error("Failed to fetch book info");
-      
-      const data = await response.json();
-      
-      if (data.totalItems > 0 && data.items?.[0]?.volumeInfo) {
-        const bookInfo = data.items[0].volumeInfo;
+      if (googleResponse.ok) {
+        const data = await googleResponse.json();
         
-        if (bookInfo.title) {
-          setTitle(bookInfo.title);
+        if (data.totalItems > 0 && data.items?.[0]?.volumeInfo) {
+          const bookInfo = data.items[0].volumeInfo;
+          
+          if (bookInfo.title) {
+            setTitle(bookInfo.title);
+          }
+          
+          if (bookInfo.authors?.length > 0) {
+            setAuthor(bookInfo.authors.join(", "));
+          }
+          
+          if (bookInfo.imageLinks?.thumbnail) {
+            const coverImage = bookInfo.imageLinks.large || 
+                              bookInfo.imageLinks.medium || 
+                              bookInfo.imageLinks.small || 
+                              bookInfo.imageLinks.thumbnail;
+            setCoverUrl(coverImage.replace("http://", "https://"));
+          }
+          
+          if (bookInfo.categories?.length > 0) {
+            const bookCategory = bookInfo.categories[0].toLowerCase();
+            if (bookCategory.includes("fiction")) setCategory("Fiction");
+            else if (bookCategory.includes("science")) setCategory("Science");
+            else if (bookCategory.includes("history")) setCategory("History");
+            else if (bookCategory.includes("biography")) setCategory("Biography");
+            else if (bookCategory.includes("technology") || bookCategory.includes("computer")) setCategory("Technology");
+            else if (bookCategory.includes("education") || bookCategory.includes("textbook")) setCategory("Textbooks");
+            else setCategory("Other");
+          }
+          
+          toast({
+            title: "Book info found!",
+            description: `Auto-filled details for "${bookInfo.title}"`,
+          });
+          setFetchingBookInfo(false);
+          return;
         }
-        
-        if (bookInfo.authors?.length > 0) {
-          setAuthor(bookInfo.authors.join(", "));
-        }
-        
-        // Auto-set cover image if available
-        if (bookInfo.imageLinks?.thumbnail) {
-          // Use higher quality image if available
-          const coverImage = bookInfo.imageLinks.large || 
-                            bookInfo.imageLinks.medium || 
-                            bookInfo.imageLinks.small || 
-                            bookInfo.imageLinks.thumbnail;
-          setCoverUrl(coverImage.replace("http://", "https://"));
-        }
-        
-        // Try to match category
-        if (bookInfo.categories?.length > 0) {
-          const bookCategory = bookInfo.categories[0].toLowerCase();
-          if (bookCategory.includes("fiction")) setCategory("Fiction");
-          else if (bookCategory.includes("science")) setCategory("Science");
-          else if (bookCategory.includes("history")) setCategory("History");
-          else if (bookCategory.includes("biography")) setCategory("Biography");
-          else if (bookCategory.includes("technology") || bookCategory.includes("computer")) setCategory("Technology");
-          else if (bookCategory.includes("education") || bookCategory.includes("textbook")) setCategory("Textbooks");
-          else setCategory("Other");
-        }
-        
-        toast({
-          title: "Book info found!",
-          description: `Auto-filled details for "${bookInfo.title}"`,
-        });
-      } else {
-        toast({
-          title: "Book not found",
-          description: "No book info found for this ISBN. Please enter details manually.",
-        });
       }
+
+      // No book found in either API
+      toast({
+        title: "Book not found",
+        description: "No book info found for this ISBN. Please enter details manually.",
+      });
     } catch (error) {
       console.error("Error fetching book info:", error);
       toast({
