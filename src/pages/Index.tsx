@@ -89,9 +89,10 @@ const Index = () => {
 
   const fetchBooks = async () => {
     try {
+      // Fetch only essential columns for the list view - improves performance
       const { data, error } = await supabase
         .from("books")
-        .select("*")
+        .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, cover_image_url, category, copy_number, organization_id, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;

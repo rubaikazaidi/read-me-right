@@ -38,9 +38,25 @@ export function QRCodeScanner({
   const [hasCamera, setHasCamera] = useState(true);
   const [lastScanType, setLastScanType] = useState<ScanType | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isStartingRef = useRef(false);
+  const isMountedRef = useRef(false);
   const { toast } = useToast();
 
   const startScanner = async () => {
+    // Prevent multiple simultaneous starts and ensure component is mounted
+    if (isStartingRef.current || !isMountedRef.current) {
+      return;
+    }
+    
+    // Check if element exists before attempting to start
+    const element = document.getElementById("qr-reader");
+    if (!element) {
+      console.log("QR reader element not found, waiting...");
+      return;
+    }
+
+    isStartingRef.current = true;
+    
     try {
       // Configure to scan both QR codes and barcodes (ISBN-13, ISBN-10, EAN-13, CODE_128)
       const html5QrCode = new Html5Qrcode("qr-reader", {
@@ -65,6 +81,7 @@ export function QRCodeScanner({
           title: "No camera found",
           description: "Please ensure your device has a camera and permissions are granted.",
         });
+        isStartingRef.current = false;
         return;
       }
 
@@ -88,14 +105,21 @@ export function QRCodeScanner({
         }
       );
 
-      setIsScanning(true);
+      if (isMountedRef.current) {
+        setIsScanning(true);
+      }
     } catch (err: any) {
       console.error("Error starting scanner:", err);
-      toast({
-        variant: "destructive",
-        title: "Camera Error",
-        description: err.message || "Failed to start camera. Please check permissions.",
-      });
+      // Only show toast if component is still mounted and not a "not found" error
+      if (isMountedRef.current && !err.message?.includes("not found")) {
+        toast({
+          variant: "destructive",
+          title: "Camera Error",
+          description: err.message || "Failed to start camera. Please check permissions.",
+        });
+      }
+    } finally {
+      isStartingRef.current = false;
     }
   };
 
@@ -118,6 +142,17 @@ export function QRCodeScanner({
     const isQRCode = format === "QR_CODE" || !format;
     const isBarcode = ["EAN_13", "EAN_8", "CODE_128", "CODE_39", "UPC_A", "UPC_E"].includes(format || "");
     
+    // Helper to safely restart scanner with delay
+    const safeRestartScanner = () => {
+      if (isMountedRef.current) {
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            startScanner();
+          }
+        }, 500);
+      }
+    };
+    
     if (isQRCode) {
       // Handle QR code - extract book ID (UUID format)
       let bookId = decodedText;
@@ -136,8 +171,7 @@ export function QRCodeScanner({
           title: "Invalid QR Code",
           description: "This QR code is not a valid book identifier.",
         });
-        // Restart scanner to try again
-        startScanner();
+        safeRestartScanner();
         return;
       }
 
@@ -163,8 +197,7 @@ export function QRCodeScanner({
           title: "Invalid Barcode",
           description: "This barcode is not a valid ISBN or book identifier.",
         });
-        // Restart scanner to try again
-        startScanner();
+        safeRestartScanner();
         return;
       }
     } else {
@@ -186,23 +219,29 @@ export function QRCodeScanner({
           title: "Unrecognized Code",
           description: "Could not identify this as a book QR code or ISBN barcode.",
         });
-        startScanner();
+        safeRestartScanner();
       }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     if (open) {
       setLastScanType(null);
       // Small delay to ensure the DOM element is rendered
       setTimeout(() => {
-        startScanner();
-      }, 100);
+        if (isMountedRef.current) {
+          startScanner();
+        }
+      }, 200);
     } else {
       stopScanner();
     }
 
     return () => {
+      isMountedRef.current = false;
+      isStartingRef.current = false;
       stopScanner();
     };
   }, [open]);
