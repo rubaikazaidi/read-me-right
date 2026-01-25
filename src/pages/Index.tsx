@@ -328,8 +328,12 @@ const Index = () => {
                 <ExportBooksButton />
                 <FineSettingsDialog />
                 <AddBookDialog onBookAdded={handleBookAdded} />
-                <Button onClick={() => setQrScannerOpen(true)} variant="outline">
-                  <ScanLine className="h-4 w-4 mr-2" />
+                <Button 
+                  onClick={() => setQrScannerOpen(true)} 
+                  size="lg"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                >
+                  <ScanLine className="h-5 w-5 mr-2" />
                   Scan Book
                 </Button>
               </div>
