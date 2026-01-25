@@ -135,6 +135,22 @@ export function AddBookDialog({
 
     try {
       let finalCoverUrl = coverUrl;
+      let copyNumber = 1;
+
+      // Check if a book with the same ISBN already exists in the organization
+      const { data: existingBooks, error: checkError } = await supabase
+        .from("books")
+        .select("copy_number")
+        .eq("isbn", isbn)
+        .eq("organization_id", organizationId)
+        .order("copy_number", { ascending: false })
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingBooks && existingBooks.length > 0) {
+        copyNumber = (existingBooks[0].copy_number || 1) + 1;
+      }
 
       // Upload file if provided
       if (coverFile) {
@@ -189,13 +205,16 @@ export function AddBookDialog({
         status: "available",
         cover_image_url: finalCoverUrl || null,
         organization_id: organizationId,
+        copy_number: copyNumber,
       });
 
       if (error) throw error;
 
       toast({
         title: "Book added!",
-        description: "The book has been successfully added to the library.",
+        description: copyNumber > 1 
+          ? `Added as copy #${copyNumber} of "${title}".`
+          : "The book has been successfully added to the library.",
       });
 
       setTitle("");

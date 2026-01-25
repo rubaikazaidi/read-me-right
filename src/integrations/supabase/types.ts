@@ -79,6 +79,7 @@ export type Database = {
           borrowed_at: string | null
           borrowed_by: string | null
           category: string
+          copy_number: number
           cover_image_url: string | null
           created_at: string | null
           due_date: string | null
@@ -93,6 +94,7 @@ export type Database = {
           borrowed_at?: string | null
           borrowed_by?: string | null
           category: string
+          copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
           due_date?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           borrowed_at?: string | null
           borrowed_by?: string | null
           category?: string
+          copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
           due_date?: string | null
