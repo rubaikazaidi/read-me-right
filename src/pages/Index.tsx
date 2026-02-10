@@ -21,9 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
 import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +53,7 @@ const Index = () => {
   const [scannedType, setScannedType] = useState<ScanType>("qr");
   const [addBookDialogOpen, setAddBookDialogOpen] = useState(false);
   const [scannedIsbnForAdd, setScannedIsbnForAdd] = useState<string>("");
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -324,19 +326,32 @@ const Index = () => {
               />
             </div>
             {userRole === "librarian" && (
-              <div className="flex gap-2 flex-wrap">
-                <StudentSearchDialog />
-                <ExportBooksButton />
-                <FineSettingsDialog />
-                
-                <Button 
-                  onClick={() => setQrScannerOpen(true)} 
-                  size="lg"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                >
-                  <ScanLine className="h-5 w-5 mr-2" />
-                  Scan Book
-                </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <AddBookDialog onBookAdded={handleBookAdded} />
+                  <Button 
+                    onClick={() => setQrScannerOpen(true)} 
+                    size="default"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                  >
+                    <ScanLine className="h-4 w-4 mr-2" />
+                    Scan Book
+                  </Button>
+                  <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="default">
+                        <Settings2 className="h-4 w-4 mr-1" />
+                        Tools
+                        {toolsOpen ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="flex gap-2 mt-2">
+                      <StudentSearchDialog />
+                      <ExportBooksButton />
+                      <FineSettingsDialog />
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
               </div>
             )}
           </div>
