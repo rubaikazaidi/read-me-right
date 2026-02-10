@@ -328,7 +328,10 @@ const Index = () => {
             {userRole === "librarian" && (
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
-                  <AddBookDialog onBookAdded={handleBookAdded} />
+                  <Button onClick={() => setAddBookDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Book
+                  </Button>
                   <Button 
                     onClick={() => setQrScannerOpen(true)} 
                     size="default"
