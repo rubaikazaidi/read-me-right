@@ -21,10 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, Settings2 } from "lucide-react";
 import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +53,7 @@ const Index = () => {
   const [scannedType, setScannedType] = useState<ScanType>("qr");
   const [addBookDialogOpen, setAddBookDialogOpen] = useState(false);
   const [scannedIsbnForAdd, setScannedIsbnForAdd] = useState<string>("");
-  const [toolsOpen, setToolsOpen] = useState(false);
+  
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -337,20 +337,26 @@ const Index = () => {
                     <ScanLine className="h-4 w-4 mr-2" />
                     Scan Book
                   </Button>
-                  <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
-                    <CollapsibleTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="default">
                         <Settings2 className="h-4 w-4 mr-1" />
                         Tools
-                        {toolsOpen ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
+                        <ChevronDown className="h-3 w-3 ml-1" />
                       </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="flex gap-2 mt-2">
-                      <StudentSearchDialog />
-                      <ExportBooksButton />
-                      <FineSettingsDialog />
-                    </CollapsibleContent>
-                  </Collapsible>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                        <div><StudentSearchDialog /></div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                        <div><ExportBooksButton /></div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                        <div><FineSettingsDialog /></div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             )}
