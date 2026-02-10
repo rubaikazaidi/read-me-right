@@ -374,15 +374,15 @@ const Index = () => {
 
               <TabsContent value="books" className="mt-6">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <div className="flex items-center justify-between mb-6">
-                    <TabsList className="grid w-full grid-cols-4 max-w-md">
+                   <div className="flex items-center gap-2 mb-6 flex-wrap">
+                    <TabsList className="grid grid-cols-4 max-w-md">
                       <TabsTrigger value="all">All</TabsTrigger>
                       <TabsTrigger value="available">Available</TabsTrigger>
                       <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
                       <TabsTrigger value="late">Late</TabsTrigger>
                     </TabsList>
                     <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-[180px] ml-4">
+                      <SelectTrigger className="w-[180px]">
                         <ArrowUpDown className="h-4 w-4 mr-2" />
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
@@ -394,7 +394,7 @@ const Index = () => {
                         <SelectItem value="oldest">Oldest First</SelectItem>
                       </SelectContent>
                     </Select>
-                    <div className="flex border rounded-md ml-2">
+                    <div className="flex border rounded-md">
                       <Button
                         variant={viewMode === "grid" ? "secondary" : "ghost"}
                         size="sm"
