@@ -328,7 +328,7 @@ const Index = () => {
                 <StudentSearchDialog />
                 <ExportBooksButton />
                 <FineSettingsDialog />
-                <AddBookDialog onBookAdded={handleBookAdded} />
+                
                 <Button 
                   onClick={() => setQrScannerOpen(true)} 
                   size="lg"
