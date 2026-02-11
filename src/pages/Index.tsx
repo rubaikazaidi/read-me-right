@@ -340,26 +340,6 @@ const Index = () => {
                     <ScanLine className="h-4 w-4 mr-2" />
                     Scan Book
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="default">
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        Tools
-                        <ChevronDown className="h-3 w-3 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover z-50">
-                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                        <div><StudentSearchDialog /></div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                        <div><ExportBooksButton /></div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                        <div><FineSettingsDialog /></div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             )}
@@ -374,7 +354,7 @@ const Index = () => {
 
               <TabsContent value="books" className="mt-6">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                   <div className="flex items-center gap-2 mb-6 flex-wrap justify-between">
+                   <div className="flex items-center gap-2 mb-6 flex-wrap">
                     <TabsList className="grid grid-cols-4 max-w-md">
                       <TabsTrigger value="all">All</TabsTrigger>
                       <TabsTrigger value="available">Available</TabsTrigger>
@@ -394,23 +374,52 @@ const Index = () => {
                         <SelectItem value="oldest">Oldest First</SelectItem>
                       </SelectContent>
                     </Select>
-                    <div className="flex border rounded-md">
-                      <Button
-                        variant={viewMode === "grid" ? "secondary" : "ghost"}
-                        size="sm"
-                        className="h-9 px-3 rounded-r-none"
-                        onClick={() => setViewMode("grid")}
-                      >
-                        <LayoutGrid className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === "list" ? "secondary" : "ghost"}
-                        size="sm"
-                        className="h-9 px-3 rounded-l-none"
-                        onClick={() => setViewMode("list")}
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex border rounded-md">
+                        <Button
+                          variant={viewMode === "grid" ? "secondary" : "ghost"}
+                          size="sm"
+                          className="h-9 px-3 rounded-r-none"
+                          onClick={() => setViewMode("grid")}
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={viewMode === "list" ? "secondary" : "ghost"}
+                          size="sm"
+                          className="h-9 px-3 rounded-l-none"
+                          onClick={() => setViewMode("list")}
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9">
+                            <Settings2 className="h-4 w-4 mr-1" />
+                            Tools
+                            <ChevronDown className="h-3 w-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="bg-popover z-50">
+                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                            <div>
+                              <StudentSearchDialog />
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                            <div>
+                              <ExportBooksButton />
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                            <div>
+                              <FineSettingsDialog />
+                            </div>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
