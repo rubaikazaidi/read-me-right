@@ -374,7 +374,7 @@ const Index = () => {
 
               <TabsContent value="books" className="mt-6">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                   <div className="flex items-center gap-2 mb-6 flex-wrap">
+                   <div className="flex items-center gap-2 mb-6 flex-wrap justify-between">
                     <TabsList className="grid grid-cols-4 max-w-md">
                       <TabsTrigger value="all">All</TabsTrigger>
                       <TabsTrigger value="available">Available</TabsTrigger>
