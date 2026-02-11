@@ -347,34 +347,65 @@ const Index = () => {
 
           {userRole === "librarian" ? (
             <Tabs defaultValue="books" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 max-w-md">
-                <TabsTrigger value="books">Books</TabsTrigger>
-                <TabsTrigger value="manage">Manage & Queues</TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <TabsList className="grid w-full sm:w-auto grid-cols-2 max-w-md">
+                  <TabsTrigger value="books">Books</TabsTrigger>
+                  <TabsTrigger value="manage">Manage & Queues</TabsTrigger>
+                </TabsList>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="default">
+                      <Settings2 className="h-4 w-4 mr-1" />
+                      Tools
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover z-50">
+                    <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                      <div>
+                        <StudentSearchDialog />
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                      <div>
+                        <ExportBooksButton />
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                      <div>
+                        <FineSettingsDialog />
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
               <TabsContent value="books" className="mt-6">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                   <div className="flex items-center gap-2 mb-6 flex-wrap">
+                  <div className="flex items-center gap-2 mb-6 flex-wrap">
                     <TabsList className="grid grid-cols-4 max-w-md">
                       <TabsTrigger value="all">All</TabsTrigger>
                       <TabsTrigger value="available">Available</TabsTrigger>
                       <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
                       <TabsTrigger value="late">Late</TabsTrigger>
                     </TabsList>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-[180px]">
-                        <ArrowUpDown className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="title-asc">Title: A-Z</SelectItem>
-                        <SelectItem value="title-desc">Title: Z-A</SelectItem>
-                        <SelectItem value="author">By Author</SelectItem>
-                        <SelectItem value="newest">Recently Added</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex items-center gap-2 ml-auto">
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="w-[180px]">
+                          <ArrowUpDown className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="title-asc">Title: A-Z</SelectItem>
+                          <SelectItem value="title-desc">Title: Z-A</SelectItem>
+                          <SelectItem value="author">By Author</SelectItem>
+                          <SelectItem value="newest">Recently Added</SelectItem>
+                          <SelectItem value="oldest">Oldest First</SelectItem>
+                        </SelectContent>
+                      </Select>
+
                       <div className="flex border rounded-md">
                         <Button
                           variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -393,33 +424,6 @@ const Index = () => {
                           <List className="h-4 w-4" />
                         </Button>
                       </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9">
-                            <Settings2 className="h-4 w-4 mr-1" />
-                            Tools
-                            <ChevronDown className="h-3 w-3 ml-1" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="bg-popover z-50">
-                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                            <div>
-                              <StudentSearchDialog />
-                            </div>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                            <div>
-                              <ExportBooksButton />
-                            </div>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                            <div>
-                              <FineSettingsDialog />
-                            </div>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </div>
 
