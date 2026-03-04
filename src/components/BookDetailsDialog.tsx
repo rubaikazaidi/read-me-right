@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book } from "@/types/book";
+import { calculateFine, getFineSettings } from "./FineSettingsDialog";
+import { differenceInDays } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, User, Mail, Calendar, Clock, History } from "lucide-react";
+import { BookOpen, User, Mail, Calendar, Clock, History, AlertTriangle } from "lucide-react";
 import { BookHistoryDialog } from "./BookHistoryDialog";
 
 interface BookDetailsDialogProps {
@@ -153,6 +155,25 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
                     <span className="text-sm font-medium">Due: {new Date(book.due_date).toLocaleDateString()}</span>
                   </div>
                 )}
+                {book.status === "late" && book.due_date && (() => {
+                  const now = new Date();
+                  const due = new Date(book.due_date);
+                  const daysLate = Math.max(0, differenceInDays(now, due));
+                  const fineAmount = calculateFine(book.due_date);
+                  const settings = getFineSettings();
+                  return (
+                    <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-sm font-semibold">Overdue by {daysLate} day{daysLate !== 1 ? "s" : ""}</span>
+                      </div>
+                      <p className="text-lg font-bold text-destructive mt-1">Fine: ₹{fineAmount.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Rate: ₹{settings.firstDayFine} (1st day) + ₹{settings.additionalDayFine}/day after
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
