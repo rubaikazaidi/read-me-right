@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, User, Mail, Calendar, Clock, History } from "lucide-react";
+import { BookOpen, User, Mail, Calendar, Clock, History, AlertTriangle } from "lucide-react";
 import { BookHistoryDialog } from "./BookHistoryDialog";
 
 interface BookDetailsDialogProps {
