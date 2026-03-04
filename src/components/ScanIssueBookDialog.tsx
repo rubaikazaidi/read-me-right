@@ -385,10 +385,24 @@ export function ScanIssueBookDialog({
                     <p className="text-xs text-muted-foreground mt-1">ISBN: {bookInfo.isbn}</p>
                   )}
                 </div>
-                <Badge variant={bookInfo.status === "available" ? "default" : bookInfo.status === "late" ? "destructive" : "secondary"}>
+              <Badge variant={bookInfo.status === "available" ? "default" : bookInfo.status === "late" ? "destructive" : "secondary"}>
                   {bookInfo.status}
                 </Badge>
               </div>
+              {scanType === "isbn" && onAddBook && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full"
+                  onClick={() => {
+                    onAddBook(scanValue);
+                    onOpenChange(false);
+                  }}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Another Copy
+                </Button>
+              )}
             </div>
           ) : (
             <div className="p-4 bg-destructive/10 rounded-md space-y-3">
