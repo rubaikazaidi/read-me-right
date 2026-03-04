@@ -35,6 +35,7 @@ interface BookInfo {
   borrowed_at: string | null;
   due_date: string | null;
   organization_id: string | null;
+  copy_number: number;
 }
 
 interface ScanIssueBookDialogProps {
@@ -61,12 +62,12 @@ export function ScanIssueBookDialog({
   const [issuing, setIssuing] = useState(false);
   const [returning, setReturning] = useState(false);
   const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
+  const [allCopies, setAllCopies] = useState<BookInfo[]>([]);
   const [borrowerInfo, setBorrowerInfo] = useState<Profile | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookError, setBookError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Fetch book info when dialog opens
   useEffect(() => {
     if (open && scanValue) {
       fetchBookInfo();
@@ -75,6 +76,7 @@ export function ScanIssueBookDialog({
       setSelectedStudent(null);
       setBookError(null);
       setBorrowerInfo(null);
+      setAllCopies([]);
     }
   }, [open, scanValue, scanType]);
 
@@ -82,93 +84,97 @@ export function ScanIssueBookDialog({
     setBookLoading(true);
     setBookError(null);
     setBorrowerInfo(null);
+    setAllCopies([]);
     
     try {
-      let query = supabase
-        .from("books")
-        .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id");
-      
       if (scanType === "qr") {
-        query = query.eq("id", scanValue);
-      } else {
-        query = query.eq("isbn", scanValue);
-      }
-      
-      const { data, error } = await query.maybeSingle();
-
-      if (error) throw error;
-      
-      if (!data) {
-        if (scanType === "isbn") {
-          setBookError(`No book found with ISBN: ${scanValue}`);
-          toast({
-            variant: "destructive",
-            title: "Book Not Found",
-            description: `No book in your library matches ISBN: ${scanValue}. Please add this book first.`,
-          });
-        } else {
-          setBookError("Book not found or invalid QR code.");
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Book not found or invalid QR code.",
-          });
-        }
-        setBookInfo(null);
-        return;
-      }
-      
-      setBookInfo(data);
-
-      // If book is borrowed/late, fetch borrower info
-      if ((data.status === "borrowed" || data.status === "late") && data.borrowed_by) {
-        const { data: borrower } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, gr_number, grade")
-          .eq("id", data.borrowed_by)
+        // QR scan: single book by ID
+        const { data, error } = await supabase
+          .from("books")
+          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number")
+          .eq("id", scanValue)
           .maybeSingle();
+
+        if (error) throw error;
         
-        if (borrower) {
-          setBorrowerInfo(borrower);
+        if (!data) {
+          setBookError("Book not found or invalid QR code.");
+          setBookInfo(null);
+          return;
         }
+        
+        setBookInfo(data);
+        await fetchBorrowerIfNeeded(data);
+      } else {
+        // ISBN scan: may have multiple copies
+        const { data, error } = await supabase
+          .from("books")
+          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number")
+          .eq("isbn", scanValue)
+          .order("copy_number", { ascending: true });
+
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          setBookError(`No book found with ISBN: ${scanValue}`);
+          setBookInfo(null);
+          return;
+        }
+
+        setAllCopies(data);
+
+        // Smart selection: prefer a borrowed/late copy (for return), otherwise pick first available
+        const borrowedCopy = data.find(b => b.status === "borrowed" || b.status === "late");
+        const availableCopy = data.find(b => b.status === "available");
+        const selectedCopy = borrowedCopy || availableCopy || data[0];
+        
+        setBookInfo(selectedCopy);
+        await fetchBorrowerIfNeeded(selectedCopy);
       }
     } catch (error: any) {
       console.error("Error fetching book:", error);
       setBookError("Failed to fetch book information.");
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch book information.",
-      });
       setBookInfo(null);
     } finally {
       setBookLoading(false);
     }
   };
 
+  const fetchBorrowerIfNeeded = async (book: BookInfo) => {
+    if ((book.status === "borrowed" || book.status === "late") && book.borrowed_by) {
+      const { data: borrower } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, gr_number, grade")
+        .eq("id", book.borrowed_by)
+        .maybeSingle();
+      
+      if (borrower) {
+        setBorrowerInfo(borrower);
+      }
+    }
+  };
+
+  const selectCopy = async (copy: BookInfo) => {
+    setBookInfo(copy);
+    setBorrowerInfo(null);
+    setSelectedStudent(null);
+    await fetchBorrowerIfNeeded(copy);
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter a search term",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Please enter a search term" });
       return;
     }
 
     if (!isValidSearchTerm(searchQuery)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid search term",
-        description: "Please use only letters, numbers, and basic punctuation",
-      });
+      toast({ variant: "destructive", title: "Invalid search term", description: "Please use only letters, numbers, and basic punctuation" });
       return;
     }
 
     setLoading(true);
     try {
       const safeSearchQuery = escapeILikePattern(searchQuery);
-
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email, gr_number, grade")
@@ -193,17 +199,10 @@ export function ScanIssueBookDialog({
       setStudents(filteredStudents);
 
       if (filteredStudents.length === 0) {
-        toast({
-          title: "No students found",
-          description: "Try a different search term",
-        });
+        toast({ title: "No students found", description: "Try a different search term" });
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to search students",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Failed to search students" });
     } finally {
       setLoading(false);
     }
@@ -211,20 +210,12 @@ export function ScanIssueBookDialog({
 
   const handleIssue = async () => {
     if (!selectedStudent || !bookInfo) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select a student",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Please select a student" });
       return;
     }
 
     if (bookInfo.status !== "available") {
-      toast({
-        variant: "destructive",
-        title: "Cannot Issue",
-        description: "This book is not available for issuing.",
-      });
+      toast({ variant: "destructive", title: "Cannot Issue", description: "This book is not available for issuing." });
       return;
     }
 
@@ -245,17 +236,13 @@ export function ScanIssueBookDialog({
 
       toast({
         title: "Book Issued Successfully",
-        description: `"${bookInfo.title}" has been issued to ${selectedStudent.full_name}`,
+        description: `"${bookInfo.title}" (Copy #${bookInfo.copy_number}) has been issued to ${selectedStudent.full_name}`,
       });
 
       onIssued();
       onOpenChange(false);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setIssuing(false);
     }
@@ -263,11 +250,7 @@ export function ScanIssueBookDialog({
 
   const handleReturn = async () => {
     if (!bookInfo || !bookInfo.borrowed_by || !bookInfo.borrowed_at) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Cannot return this book - missing borrowing information.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Cannot return this book - missing borrowing information." });
       return;
     }
 
@@ -275,13 +258,9 @@ export function ScanIssueBookDialog({
     try {
       const now = new Date();
       const dueDate = bookInfo.due_date ? new Date(bookInfo.due_date) : null;
-      
-      // Calculate if late and days late
       const wasLate = dueDate ? now > dueDate : false;
       const daysLate = wasLate && dueDate ? differenceInDays(now, dueDate) : 0;
-      
-      // Simple fine calculation (can be enhanced with fine settings later)
-      const fineAmount = wasLate ? daysLate * 5 : 0; // ₹5 per day late
+      const fineAmount = wasLate ? daysLate * 5 : 0;
 
       // Create borrowing history record
       const { error: historyError } = await supabase
@@ -314,20 +293,32 @@ export function ScanIssueBookDialog({
 
       if (updateError) throw updateError;
 
+      // Clear any fulfilled/approved requests for this book and user
+      await supabase
+        .from("book_requests")
+        .delete()
+        .eq("book_id", bookInfo.id)
+        .eq("user_id", bookInfo.borrowed_by)
+        .in("status", ["approved"]);
+
+      // Update queue positions via edge function
+      try {
+        await supabase.functions.invoke("update-queue-positions");
+      } catch (queueError) {
+        console.error("Failed to update queue positions:", queueError);
+        // Non-critical, don't block the return
+      }
+
       toast({
         title: "Book Returned Successfully",
-        description: `"${bookInfo.title}" has been returned${wasLate ? ` (${daysLate} days late, Fine: ₹${fineAmount})` : ""}`,
+        description: `"${bookInfo.title}" (Copy #${bookInfo.copy_number}) has been returned${wasLate ? ` (${daysLate} days late, Fine: ₹${fineAmount})` : ""}`,
       });
 
-      onIssued(); // Refresh the book list
+      onIssued();
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error returning book:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to return book",
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to return book" });
     } finally {
       setReturning(false);
     }
@@ -336,9 +327,12 @@ export function ScanIssueBookDialog({
   const isBookBorrowed = bookInfo?.status === "borrowed" || bookInfo?.status === "late";
   const isBookAvailable = bookInfo?.status === "available";
 
+  // For ISBN scans with multiple copies, show a copy selector
+  const hasMultipleCopies = allCopies.length > 1;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -382,13 +376,34 @@ export function ScanIssueBookDialog({
                   <p className="font-semibold">{bookInfo.title}</p>
                   <p className="text-sm text-muted-foreground">by {bookInfo.author}</p>
                   {bookInfo.isbn && (
-                    <p className="text-xs text-muted-foreground mt-1">ISBN: {bookInfo.isbn}</p>
+                    <p className="text-xs text-muted-foreground mt-1">ISBN: {bookInfo.isbn} • Copy #{bookInfo.copy_number}</p>
                   )}
                 </div>
-              <Badge variant={bookInfo.status === "available" ? "default" : bookInfo.status === "late" ? "destructive" : "secondary"}>
+                <Badge variant={bookInfo.status === "available" ? "default" : bookInfo.status === "late" ? "destructive" : "secondary"}>
                   {bookInfo.status}
                 </Badge>
               </div>
+
+              {/* Multiple copies selector for ISBN scans */}
+              {hasMultipleCopies && (
+                <div className="mt-3 space-y-2">
+                  <Label className="text-xs font-medium">Select Copy ({allCopies.length} copies found)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {allCopies.map((copy) => (
+                      <Button
+                        key={copy.id}
+                        variant={bookInfo.id === copy.id ? "default" : "outline"}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => selectCopy(copy)}
+                      >
+                        #{copy.copy_number} - {copy.status}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {scanType === "isbn" && onAddBook && (
                 <Button
                   variant="outline"
