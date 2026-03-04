@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book } from "@/types/book";
+import { calculateFine, getFineSettings } from "./FineSettingsDialog";
+import { differenceInDays } from "date-fns";
 import {
   Dialog,
   DialogContent,
