@@ -222,19 +222,49 @@ export function LibrarianDashboard() {
 
   const handleApproveRequest = async (requestId: string) => {
     try {
-      const { error } = await supabase
-        .from("book_requests")
-        .update({ status: "approved" })
-        .eq("id", requestId);
+      // Get the request details first
+      const request = requests.find(r => r.id === requestId);
+      if (!request) throw new Error("Request not found");
 
-      if (error) throw error;
+      // Check if there's already an approved request for this book
+      const existingApproved = requests.find(
+        r => r.book_id === request.book_id && r.status === "approved" && r.id !== requestId
+      );
+      if (existingApproved) {
+        toast({
+          variant: "destructive",
+          title: "Cannot approve",
+          description: `This book already has an approved pickup pending for ${existingApproved.profiles?.full_name}. Only one approved request per book is allowed.`,
+        });
+        return;
+      }
 
-      toast({
-        title: "Success",
-        description: "Request approved",
-      });
+      // Check if the book is currently available
+      const book = books.find(b => b.id === request.book_id);
 
-      fetchRequests();
+      if (book && book.status === "available") {
+        // Book is available — auto-mark as taken
+        await handleMarkAsTaken(book.id, request.user_id, requestId);
+        toast({
+          title: "Success",
+          description: `Book is available — automatically assigned to ${request.profiles?.full_name}`,
+        });
+      } else {
+        // Book is borrowed/late — just approve the request for pickup when returned
+        const { error } = await supabase
+          .from("book_requests")
+          .update({ status: "approved" })
+          .eq("id", requestId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Request approved — student can pick up when book is available",
+        });
+
+        fetchRequests();
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
