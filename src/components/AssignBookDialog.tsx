@@ -141,6 +141,28 @@ export function AssignBookDialog({
 
       if (error) throw error;
 
+      // Remove the student's pending/approved requests for this book
+      await supabase
+        .from("book_requests")
+        .delete()
+        .eq("book_id", bookId)
+        .eq("user_id", selectedStudent.id);
+
+      // Update queue positions for remaining requests
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await supabase.functions.invoke("update-queue-positions", {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: { book_id: bookId },
+          });
+        }
+      } catch (queueError) {
+        console.error("Error updating queue positions:", queueError);
+      }
+
       toast({
         title: "Success",
         description: `Book assigned to ${selectedStudent.full_name}`,
