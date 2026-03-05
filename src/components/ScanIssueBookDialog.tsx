@@ -234,6 +234,20 @@ export function ScanIssueBookDialog({
 
       if (error) throw error;
 
+      // Auto-clear any approved/pending request for this student+book
+      await supabase
+        .from("book_requests")
+        .delete()
+        .eq("book_id", bookInfo.id)
+        .eq("user_id", selectedStudent.id);
+
+      // Update queue positions
+      try {
+        await supabase.functions.invoke("update-queue-positions");
+      } catch (queueError) {
+        console.error("Failed to update queue positions:", queueError);
+      }
+
       toast({
         title: "Book Issued Successfully",
         description: `"${bookInfo.title}" (Copy #${bookInfo.copy_number}) has been issued to ${selectedStudent.full_name}`,

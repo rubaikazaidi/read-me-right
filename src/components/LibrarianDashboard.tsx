@@ -500,8 +500,8 @@ export function LibrarianDashboard() {
     return acc;
   }, {} as Record<string, BookRequest[]>);
 
-  // Get books with approved requests (pending pickup)
-  const booksWithApprovedRequests = sortedBooks.filter(book => approvedByBook[book.id]?.length > 0);
+  // Get books with approved requests (pending pickup) - only show if the book is actually available
+  const booksWithApprovedRequests = sortedBooks.filter(book => approvedByBook[book.id]?.length > 0 && book.status === "available");
 
   if (loading) {
     return <div>Loading...</div>;
@@ -576,18 +576,22 @@ export function LibrarianDashboard() {
             </Select>
           </div>
         </div>
-        {showApprovedRequests && bookApprovedRequests.length > 0 && (
+      {showApprovedRequests && bookApprovedRequests.length > 0 && (
           <div className="mt-3 space-y-2">
             <p className="text-sm font-medium text-muted-foreground">Approved Requests:</p>
             {bookApprovedRequests.map((request) => (
               <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded">
                 <p className="text-sm">{request.profiles?.full_name}</p>
-                <Button
-                  size="sm"
-                  onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
-                >
-                  Mark as Taken
-                </Button>
+                {book.status === "available" ? (
+                  <Button
+                    size="sm"
+                    onClick={() => handleMarkAsTaken(book.id, request.user_id, request.id)}
+                  >
+                    Mark as Taken
+                  </Button>
+                ) : (
+                  <Badge variant="secondary">Waiting for return</Badge>
+                )}
               </div>
             ))}
           </div>
