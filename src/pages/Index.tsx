@@ -186,14 +186,36 @@ const Index = () => {
     if (!user) return;
 
     try {
+      // If this is a grouped book, find an available copy to request
+      const groupedBook = filteredBooks.find(b => b.id === bookId) as GroupedBook | undefined;
+      let targetBookId = bookId;
+      
+      if (groupedBook?.allCopyIds && groupedBook.allCopyIds.length > 1) {
+        // Find an available copy that the user hasn't already requested
+        const availableCopy = books.find(
+          b => groupedBook.allCopyIds.includes(b.id) && b.status === "available" && !userRequests[b.id]
+        );
+        if (availableCopy) {
+          targetBookId = availableCopy.id;
+        } else {
+          // No available copy, find any copy the user hasn't requested yet
+          const anyUnrequested = books.find(
+            b => groupedBook.allCopyIds.includes(b.id) && !userRequests[b.id]
+          );
+          if (anyUnrequested) {
+            targetBookId = anyUnrequested.id;
+          }
+        }
+      }
+
       // Get next queue position
       const { data: queuePos } = await supabase.rpc("get_next_queue_position", {
-        book_id_param: bookId,
+        book_id_param: targetBookId,
       });
 
       // Create request with pending status
       const { error } = await supabase.from("book_requests").insert({
-        book_id: bookId,
+        book_id: targetBookId,
         user_id: user.id,
         status: "pending",
         queue_position: queuePos || 1,
