@@ -99,7 +99,7 @@ const Index = () => {
 
       if (error) throw error;
       setBooks(data as Book[] || []);
-      setFilteredBooks(data as Book[] || []);
+      setFilteredBooks(groupBooksByIsbn(data as Book[] || []));
     } catch (error: any) {
       toast({
         variant: "destructive",
