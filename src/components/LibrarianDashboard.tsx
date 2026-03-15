@@ -242,29 +242,20 @@ export function LibrarianDashboard() {
       // Check if the book is currently available
       const book = books.find(b => b.id === request.book_id);
 
-      if (book && book.status === "available") {
-        // Book is available — auto-mark as taken
-        await handleMarkAsTaken(book.id, request.user_id, requestId);
-        toast({
-          title: "Success",
-          description: `Book is available — automatically assigned to ${request.profiles?.full_name}`,
-        });
-      } else {
-        // Book is borrowed/late — just approve the request for pickup when returned
-        const { error } = await supabase
-          .from("book_requests")
-          .update({ status: "approved" })
-          .eq("id", requestId);
+      // Just approve (reserve) the request — don't auto-assign the book
+      const { error } = await supabase
+        .from("book_requests")
+        .update({ status: "approved" })
+        .eq("id", requestId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Success",
-          description: "Request approved — student can pick up when book is available",
-        });
+      toast({
+        title: "Success",
+        description: `Request approved for ${request.profiles?.full_name} — book is reserved until scanned or manually marked as taken`,
+      });
 
-        fetchRequests();
-      }
+      fetchRequests();
     } catch (error: any) {
       toast({
         variant: "destructive",
