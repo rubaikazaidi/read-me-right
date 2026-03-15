@@ -149,8 +149,11 @@ const Index = () => {
       filtered = filtered.filter((book) => book.status === statusFilter);
     }
 
+    // Group by ISBN first, then sort
+    let grouped = groupBooksByIsbn(filtered);
+
     // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
+    grouped = [...grouped].sort((a, b) => {
       switch (sortBy) {
         case "title-asc":
           return a.title.localeCompare(b.title);
@@ -167,7 +170,7 @@ const Index = () => {
       }
     });
 
-    setFilteredBooks(filtered);
+    setFilteredBooks(grouped);
   }, [searchTerm, statusFilter, books, sortBy]);
 
   const handleBookAdded = () => {
