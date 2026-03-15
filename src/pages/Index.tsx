@@ -244,10 +244,17 @@ const Index = () => {
     if (!user) return;
 
     try {
+      // For grouped books, find the actual copy the user has a request for
+      const groupedBook = filteredBooks.find(b => b.id === bookId) as GroupedBook | undefined;
+      const copyIds = groupedBook?.allCopyIds || [bookId];
+      
+      // Find which copy has the user's pending request
+      const targetCopyId = copyIds.find(id => userRequests[id]?.status === "pending") || bookId;
+
       const { error } = await supabase
         .from("book_requests")
         .delete()
-        .eq("book_id", bookId)
+        .eq("book_id", targetCopyId)
         .eq("user_id", user.id)
         .eq("status", "pending");
 
