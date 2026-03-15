@@ -35,7 +35,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<GroupedBook[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
