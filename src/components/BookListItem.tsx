@@ -1,4 +1,5 @@
-import { Book } from "@/types/book";
+import { Book, GroupedBook } from "@/types/book";
+import { Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Pencil, X } from "lucide-react";
@@ -86,6 +87,12 @@ export function BookListItem({
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
           {book.category && <span>{book.category}</span>}
           {book.isbn && <span className="opacity-60">ISBN: {book.isbn}</span>}
+          {(book as GroupedBook).totalCopies > 1 && (
+            <span className="flex items-center gap-1">
+              <Copy className="w-3 h-3" />
+              {(book as GroupedBook).availableCopies}/{(book as GroupedBook).totalCopies} available
+            </span>
+          )}
           {isLibrarian && book.due_date && (
             <span>Due: {new Date(book.due_date).toLocaleDateString()}</span>
           )}

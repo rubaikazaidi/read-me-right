@@ -1,4 +1,5 @@
-import { Book } from "@/types/book";
+import { Book, GroupedBook } from "@/types/book";
+import { Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -64,6 +65,12 @@ export function BookCard({ book, onRequestBook, onLeaveQueue, isLibrarian = fals
           <Badge className={`absolute top-2 right-2 text-xs ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
+          {(book as GroupedBook).totalCopies > 1 && (
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 backdrop-blur-sm text-foreground text-xs font-semibold px-2 py-1 rounded-md shadow-sm border">
+              <Copy className="w-3 h-3" />
+              {(book as GroupedBook).totalCopies} copies
+            </div>
+          )}
           {onEdit && (
             <Button
               variant="secondary"
@@ -86,6 +93,11 @@ export function BookCard({ book, onRequestBook, onLeaveQueue, isLibrarian = fals
         {book.category && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
             {book.category}
+          </p>
+        )}
+        {(book as GroupedBook).totalCopies > 1 && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {(book as GroupedBook).availableCopies} of {(book as GroupedBook).totalCopies} available
           </p>
         )}
       </CardContent>

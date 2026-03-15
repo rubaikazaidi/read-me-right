@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganization } from "@/hooks/useOrganization";
-import { Book } from "@/types/book";
+import { Book, GroupedBook, groupBooksByIsbn } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { EditBookDialog } from "@/components/EditBookDialog";
@@ -35,7 +35,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<GroupedBook[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
@@ -99,7 +99,7 @@ const Index = () => {
 
       if (error) throw error;
       setBooks(data as Book[] || []);
-      setFilteredBooks(data as Book[] || []);
+      setFilteredBooks(groupBooksByIsbn(data as Book[] || []));
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -149,8 +149,11 @@ const Index = () => {
       filtered = filtered.filter((book) => book.status === statusFilter);
     }
 
+    // Group by ISBN first, then sort
+    let grouped = groupBooksByIsbn(filtered);
+
     // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
+    grouped = [...grouped].sort((a, b) => {
       switch (sortBy) {
         case "title-asc":
           return a.title.localeCompare(b.title);
@@ -167,7 +170,7 @@ const Index = () => {
       }
     });
 
-    setFilteredBooks(filtered);
+    setFilteredBooks(grouped);
   }, [searchTerm, statusFilter, books, sortBy]);
 
   const handleBookAdded = () => {
@@ -183,14 +186,36 @@ const Index = () => {
     if (!user) return;
 
     try {
+      // If this is a grouped book, find an available copy to request
+      const groupedBook = filteredBooks.find(b => b.id === bookId) as GroupedBook | undefined;
+      let targetBookId = bookId;
+      
+      if (groupedBook?.allCopyIds && groupedBook.allCopyIds.length > 1) {
+        // Find an available copy that the user hasn't already requested
+        const availableCopy = books.find(
+          b => groupedBook.allCopyIds.includes(b.id) && b.status === "available" && !userRequests[b.id]
+        );
+        if (availableCopy) {
+          targetBookId = availableCopy.id;
+        } else {
+          // No available copy, find any copy the user hasn't requested yet
+          const anyUnrequested = books.find(
+            b => groupedBook.allCopyIds.includes(b.id) && !userRequests[b.id]
+          );
+          if (anyUnrequested) {
+            targetBookId = anyUnrequested.id;
+          }
+        }
+      }
+
       // Get next queue position
       const { data: queuePos } = await supabase.rpc("get_next_queue_position", {
-        book_id_param: bookId,
+        book_id_param: targetBookId,
       });
 
       // Create request with pending status
       const { error } = await supabase.from("book_requests").insert({
-        book_id: bookId,
+        book_id: targetBookId,
         user_id: user.id,
         status: "pending",
         queue_position: queuePos || 1,
@@ -219,10 +244,17 @@ const Index = () => {
     if (!user) return;
 
     try {
+      // For grouped books, find the actual copy the user has a request for
+      const groupedBook = filteredBooks.find(b => b.id === bookId) as GroupedBook | undefined;
+      const copyIds = groupedBook?.allCopyIds || [bookId];
+      
+      // Find which copy has the user's pending request
+      const targetCopyId = copyIds.find(id => userRequests[id]?.status === "pending") || bookId;
+
       const { error } = await supabase
         .from("book_requests")
         .delete()
-        .eq("book_id", bookId)
+        .eq("book_id", targetCopyId)
         .eq("user_id", user.id)
         .eq("status", "pending");
 
@@ -580,7 +612,14 @@ const Index = () => {
                   ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {filteredBooks.map((book) => {
-                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        const grouped = book as GroupedBook;
+                        const isBorrowedByMe = grouped.allCopyIds?.some(
+                          copyId => books.find(b => b.id === copyId)?.borrowed_by === user?.id
+                        );
+                        // Find userRequest across all copies
+                        const userRequest = grouped.allCopyIds?.reduce<{ status: string; queue_position: number | null } | null>((found, copyId) => {
+                          return found || userRequests[copyId] || null;
+                        }, null);
                         return (
                           <BookCard
                             key={book.id}
@@ -588,7 +627,7 @@ const Index = () => {
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
                             onLeaveQueue={handleLeaveQueue}
                             isLibrarian={false}
-                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : userRequest}
                           />
                         );
                       })}
@@ -596,7 +635,13 @@ const Index = () => {
                   ) : (
                     <div className="flex flex-col gap-2">
                       {filteredBooks.map((book) => {
-                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        const grouped = book as GroupedBook;
+                        const isBorrowedByMe = grouped.allCopyIds?.some(
+                          copyId => books.find(b => b.id === copyId)?.borrowed_by === user?.id
+                        );
+                        const userRequest = grouped.allCopyIds?.reduce<{ status: string; queue_position: number | null } | null>((found, copyId) => {
+                          return found || userRequests[copyId] || null;
+                        }, null);
                         return (
                           <BookListItem
                             key={book.id}
@@ -604,7 +649,7 @@ const Index = () => {
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
                             onLeaveQueue={handleLeaveQueue}
                             isLibrarian={false}
-                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : userRequest}
                           />
                         );
                       })}
