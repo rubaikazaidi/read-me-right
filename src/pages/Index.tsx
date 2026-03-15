@@ -628,7 +628,13 @@ const Index = () => {
                   ) : (
                     <div className="flex flex-col gap-2">
                       {filteredBooks.map((book) => {
-                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        const grouped = book as GroupedBook;
+                        const isBorrowedByMe = grouped.allCopyIds?.some(
+                          copyId => books.find(b => b.id === copyId)?.borrowed_by === user?.id
+                        );
+                        const userRequest = grouped.allCopyIds?.reduce<{ status: string; queue_position: number | null } | null>((found, copyId) => {
+                          return found || userRequests[copyId] || null;
+                        }, null);
                         return (
                           <BookListItem
                             key={book.id}
@@ -636,7 +642,7 @@ const Index = () => {
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
                             onLeaveQueue={handleLeaveQueue}
                             isLibrarian={false}
-                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : userRequest}
                           />
                         );
                       })}
