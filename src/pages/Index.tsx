@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganization } from "@/hooks/useOrganization";
-import { Book } from "@/types/book";
+import { Book, GroupedBook, groupBooksByIsbn } from "@/types/book";
 import { BookCard } from "@/components/BookCard";
 import { AddBookDialog } from "@/components/AddBookDialog";
 import { EditBookDialog } from "@/components/EditBookDialog";
