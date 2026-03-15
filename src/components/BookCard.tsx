@@ -95,6 +95,11 @@ export function BookCard({ book, onRequestBook, onLeaveQueue, isLibrarian = fals
             {book.category}
           </p>
         )}
+        {(book as GroupedBook).totalCopies > 1 && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {(book as GroupedBook).availableCopies} of {(book as GroupedBook).totalCopies} available
+          </p>
+        )}
       </CardContent>
       {onRequestBook && !userRequest && (
         <CardFooter className="px-3 pb-3 pt-0">
