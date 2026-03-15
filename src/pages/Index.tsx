@@ -605,7 +605,14 @@ const Index = () => {
                   ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {filteredBooks.map((book) => {
-                        const isBorrowedByMe = book.borrowed_by === user?.id && (book.status === "borrowed" || book.status === "late");
+                        const grouped = book as GroupedBook;
+                        const isBorrowedByMe = grouped.allCopyIds?.some(
+                          copyId => books.find(b => b.id === copyId)?.borrowed_by === user?.id
+                        );
+                        // Find userRequest across all copies
+                        const userRequest = grouped.allCopyIds?.reduce<{ status: string; queue_position: number | null } | null>((found, copyId) => {
+                          return found || userRequests[copyId] || null;
+                        }, null);
                         return (
                           <BookCard
                             key={book.id}
@@ -613,7 +620,7 @@ const Index = () => {
                             onRequestBook={isBorrowedByMe ? undefined : handleRequestBook}
                             onLeaveQueue={handleLeaveQueue}
                             isLibrarian={false}
-                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : (userRequests[book.id] || null)}
+                            userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : userRequest}
                           />
                         );
                       })}
