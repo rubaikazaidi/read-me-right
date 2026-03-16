@@ -28,10 +28,39 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", book.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Book deleted",
+        description: `"${book.title}" has been permanently removed.`,
+      });
+
+      onOpenChange(false);
+      onBookUpdated();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     setTitle(book.title);
