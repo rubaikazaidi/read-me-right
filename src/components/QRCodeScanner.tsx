@@ -138,9 +138,8 @@ export function QRCodeScanner({
   const handleCodeScanned = async (decodedText: string, format?: string) => {
     await stopScanner();
     
-    // Determine if it's a QR code or barcode based on format
-    const isQRCode = format === "QR_CODE" || !format;
     const isBarcode = ["EAN_13", "EAN_8", "CODE_128", "CODE_39", "UPC_A", "UPC_E"].includes(format || "");
+    const isQRCode = format === "QR_CODE";
     
     // Helper to safely restart scanner with delay
     const safeRestartScanner = () => {
@@ -152,75 +151,45 @@ export function QRCodeScanner({
         }, 500);
       }
     };
-    
-    if (isQRCode) {
-      // Handle QR code - extract book ID (UUID format)
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const cleanedCode = decodedText.replace(/[- ]/g, "");
+
+    // Try to extract a UUID from QR codes or URL-like content
+    if (isQRCode || decodedText.includes("/book/")) {
       let bookId = decodedText;
-      
-      // If it's a URL, extract the book ID from it
       if (decodedText.includes("/book/")) {
         const parts = decodedText.split("/book/");
         bookId = parts[parts.length - 1];
       }
-
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(bookId)) {
-        toast({
-          variant: "destructive",
-          title: "Invalid QR Code",
-          description: "This QR code is not a valid book identifier.",
-        });
-        safeRestartScanner();
-        return;
-      }
-
-      setLastScanType("qr");
-      onScan({ type: "qr", value: bookId });
-      onOpenChange(false);
-    } else if (isBarcode) {
-      // Handle barcode - validate ISBN format
-      const cleanedCode = decodedText.replace(/[- ]/g, "");
-      
-      // Check if it's a valid ISBN-13 (starts with 978 or 979) or ISBN-10
-      const isValidISBN13 = /^97[89]\d{10}$/.test(cleanedCode);
-      const isValidISBN10 = /^\d{10}$/.test(cleanedCode);
-      const isValidEAN = /^\d{13}$/.test(cleanedCode);
-      
-      if (isValidISBN13 || isValidISBN10 || isValidEAN) {
-        setLastScanType("isbn");
-        onScan({ type: "isbn", value: cleanedCode });
-        onOpenChange(false);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invalid Barcode",
-          description: "This barcode is not a valid ISBN or book identifier.",
-        });
-        safeRestartScanner();
-        return;
-      }
-    } else {
-      // Unknown format - try to determine based on content
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const cleanedCode = decodedText.replace(/[- ]/g, "");
-      
-      if (uuidRegex.test(decodedText)) {
+      if (uuidRegex.test(bookId)) {
         setLastScanType("qr");
-        onScan({ type: "qr", value: decodedText });
+        onScan({ type: "qr", value: bookId });
         onOpenChange(false);
-      } else if (/^\d{10,13}$/.test(cleanedCode)) {
-        setLastScanType("isbn");
-        onScan({ type: "isbn", value: cleanedCode });
-        onOpenChange(false);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Unrecognized Code",
-          description: "Could not identify this as a book QR code or ISBN barcode.",
-        });
-        safeRestartScanner();
+        return;
       }
+    }
+
+    // Accept any numeric barcode with 8+ digits (ISBN, EAN, UPC, or other book identifiers)
+    if (isBarcode || /^\d{8,}$/.test(cleanedCode)) {
+      setLastScanType("isbn");
+      onScan({ type: "isbn", value: cleanedCode });
+      onOpenChange(false);
+      return;
+    }
+
+    // Check content-based detection for unknown formats
+    if (uuidRegex.test(decodedText)) {
+      setLastScanType("qr");
+      onScan({ type: "qr", value: decodedText });
+      onOpenChange(false);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Unrecognized Code",
+        description: "Could not identify this as a book QR code or barcode.",
+      });
+      safeRestartScanner();
     }
   };
 
