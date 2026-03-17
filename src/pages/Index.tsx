@@ -421,84 +421,8 @@ const Index = () => {
               </div>
 
               <TabsContent value="books" className="mt-6">
-                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <div className="flex items-center gap-2 mb-6 flex-wrap">
-                    <TabsList className="grid grid-cols-4 max-w-md">
-                      <TabsTrigger value="all">All</TabsTrigger>
-                      <TabsTrigger value="available">Available</TabsTrigger>
-                      <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
-                      <TabsTrigger value="late">Late</TabsTrigger>
-                    </TabsList>
-
-                    <div className="flex items-center gap-2 ml-auto">
-                      <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-[180px]">
-                          <ArrowUpDown className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="title-asc">Title: A-Z</SelectItem>
-                          <SelectItem value="title-desc">Title: Z-A</SelectItem>
-                          <SelectItem value="author">By Author</SelectItem>
-                          <SelectItem value="newest">Recently Added</SelectItem>
-                          <SelectItem value="oldest">Oldest First</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <div className="flex border rounded-md">
-                        <Button
-                          variant={viewMode === "grid" ? "secondary" : "ghost"}
-                          size="sm"
-                          className="h-9 px-3 rounded-r-none"
-                          onClick={() => setViewMode("grid")}
-                        >
-                          <LayoutGrid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant={viewMode === "list" ? "secondary" : "ghost"}
-                          size="sm"
-                          className="h-9 px-3 rounded-l-none"
-                          onClick={() => setViewMode("list")}
-                        >
-                          <List className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <TabsContent value={statusFilter}>
-                    {filteredBooks.length === 0 ? (
-                      <div className="text-center py-12">
-                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">No books found</p>
-                      </div>
-                    ) : viewMode === "grid" ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        {filteredBooks.map((book) => (
-                          <BookCard 
-                            key={book.id} 
-                            book={book} 
-                            isLibrarian={true}
-                            onEdit={() => setEditingBook(book)}
-                            onViewDetails={() => setViewingBook(book)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        {filteredBooks.map((book) => (
-                          <BookListItem 
-                            key={book.id} 
-                            book={book} 
-                            isLibrarian={true}
-                            onEdit={() => setEditingBook(book)}
-                            onViewDetails={() => setViewingBook(book)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                <h2 className="text-lg font-semibold text-foreground mb-4">Browse by Category</h2>
+                <CategoryTiles books={books} />
               </TabsContent>
 
               <TabsContent value="manage" className="mt-6">
