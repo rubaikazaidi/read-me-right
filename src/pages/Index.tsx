@@ -15,6 +15,7 @@ import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
 import { StudentProfileDialog } from "@/components/StudentProfileDialog";
 import { BookRecommendations } from "@/components/BookRecommendations";
+import { CategoryTiles } from "@/components/CategoryTiles";
 import { QRCodeScanner, ScanResult, ScanType } from "@/components/QRCodeScanner";
 import { ScanIssueBookDialog } from "@/components/ScanIssueBookDialog";
 import { Input } from "@/components/ui/input";
