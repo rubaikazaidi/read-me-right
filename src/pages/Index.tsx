@@ -11,6 +11,7 @@ import { BookDetailsDialog } from "@/components/BookDetailsDialog";
 import { LibrarySidebar, SidebarToggle } from "@/components/LibrarySidebar";
 import { LibrarianDashboard } from "@/components/LibrarianDashboard";
 import { FineSettingsDialog, calculateFine } from "@/components/FineSettingsDialog";
+import { ManageCategoriesDialog } from "@/components/ManageCategoriesDialog";
 import { ExportBooksButton } from "@/components/ExportBooksButton";
 import { StudentSearchDialog } from "@/components/StudentSearchDialog";
 import { StudentProfileDialog } from "@/components/StudentProfileDialog";
