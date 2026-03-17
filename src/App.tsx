@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import StudentDetails from "./pages/StudentDetails";
+import CategoryBooks from "./pages/CategoryBooks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
