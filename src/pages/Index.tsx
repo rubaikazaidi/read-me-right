@@ -411,6 +411,11 @@ const Index = () => {
                         <FineSettingsDialog />
                       </div>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                      <div>
+                        <ManageCategoriesDialog />
+                      </div>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
