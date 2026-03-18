@@ -273,6 +273,7 @@ export function AddBookDialog({
       setCategory("");
       setCoverUrl("");
       setCoverFile(null);
+      setAgeRating("");
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
