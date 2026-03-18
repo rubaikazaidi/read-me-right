@@ -37,6 +37,7 @@ interface BookInfo {
   due_date: string | null;
   organization_id: string | null;
   copy_number: number;
+  age_rating: string | null;
 }
 
 interface ScanIssueBookDialogProps {
