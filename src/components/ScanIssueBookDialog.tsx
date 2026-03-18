@@ -597,5 +597,37 @@ export function ScanIssueBookDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+      {/* Age rating warning dialog */}
+      <AlertDialog open={showAgeWarning} onOpenChange={setShowAgeWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Age Rating Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This book is rated <span className="font-semibold">{bookInfo?.age_rating}</span>, but{" "}
+              <span className="font-semibold">{selectedStudent?.full_name}</span> is{" "}
+              {selectedStudent?.age ? `${selectedStudent.age} years old` : "of unknown age"}.
+              <br /><br />
+              The student may not be suitable for this book's content. Do you still want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowAgeWarning(false);
+                await performIssue();
+              }}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Issue Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
