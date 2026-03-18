@@ -362,6 +362,23 @@ export function AddBookDialog({
             </Select>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="ageRating">Age Rating</Label>
+            <Select value={ageRating} onValueChange={setAgeRating}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select age rating (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="5+">5+</SelectItem>
+                <SelectItem value="8+">8+</SelectItem>
+                <SelectItem value="10+">10+</SelectItem>
+                <SelectItem value="13+">13+</SelectItem>
+                <SelectItem value="16+">16+</SelectItem>
+                <SelectItem value="18+">18+</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Book Cover</Label>
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
