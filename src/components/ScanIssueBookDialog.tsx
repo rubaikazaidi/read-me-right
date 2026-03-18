@@ -112,7 +112,7 @@ export function ScanIssueBookDialog({
         // ISBN scan: may have multiple copies
         const { data, error } = await supabase
           .from("books")
-          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number")
+          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number, age_rating")
           .eq("isbn", scanValue)
           .order("copy_number", { ascending: true });
 
