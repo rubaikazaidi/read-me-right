@@ -255,6 +255,7 @@ export function AddBookDialog({
         cover_image_url: finalCoverUrl || null,
         organization_id: organizationId,
         copy_number: copyNumber,
+        age_rating: ageRating || null,
       });
 
       if (error) throw error;
