@@ -68,6 +68,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setAuthor(book.author);
     setIsbn(book.isbn);
     setCategory(book.category);
+    setAgeRating((book as any).age_rating || "");
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
