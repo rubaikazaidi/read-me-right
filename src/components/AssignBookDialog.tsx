@@ -124,7 +124,7 @@ export function AssignBookDialog({
       const safeSearchQuery = escapeILikePattern(searchQuery);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, age")
         .or(`full_name.ilike.%${safeSearchQuery}%,email.ilike.%${safeSearchQuery}%`);
 
       if (error) throw error;
