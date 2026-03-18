@@ -108,7 +108,7 @@ export function CategoryTiles({ books }: CategoryTilesProps) {
             className="cursor-pointer group hover:shadow-lg transition-all duration-300 border hover:border-primary/20 overflow-hidden relative"
             onClick={() => navigate(`/category/${encodeURIComponent(cat.name)}`)}
             style={{
-              background: `${getPattern(cat.name, cat.color)}, linear-gradient(145deg, hsl(${cat.color} / 0.06) 0%, hsl(${cat.color} / 0.02) 100%)`,
+              background: `${getPattern(cat.name, cat.color)}, linear-gradient(145deg, hsl(${cat.color} / 0.12) 0%, hsl(${cat.color} / 0.04) 100%)`,
             }}
           >
             {/* Subtle corner accent */}
