@@ -1,0 +1,1 @@
+ALTER TABLE public.books ADD COLUMN age_rating text DEFAULT NULL;
