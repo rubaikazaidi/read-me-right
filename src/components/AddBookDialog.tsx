@@ -30,6 +30,7 @@ export function AddBookDialog({
   const [category, setCategory] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [ageRating, setAgeRating] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -254,6 +255,7 @@ export function AddBookDialog({
         cover_image_url: finalCoverUrl || null,
         organization_id: organizationId,
         copy_number: copyNumber,
+        age_rating: ageRating || null,
       });
 
       if (error) throw error;
@@ -271,6 +273,7 @@ export function AddBookDialog({
       setCategory("");
       setCoverUrl("");
       setCoverFile(null);
+      setAgeRating("");
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
@@ -355,6 +358,23 @@ export function AddBookDialog({
                 <SelectItem value="Technology">Technology</SelectItem>
                 <SelectItem value="Textbooks">Textbooks</SelectItem>
                 <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ageRating">Age Rating</Label>
+            <Select value={ageRating} onValueChange={setAgeRating}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select age rating (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="5+">5+</SelectItem>
+                <SelectItem value="8+">8+</SelectItem>
+                <SelectItem value="10+">10+</SelectItem>
+                <SelectItem value="13+">13+</SelectItem>
+                <SelectItem value="16+">16+</SelectItem>
+                <SelectItem value="18+">18+</SelectItem>
               </SelectContent>
             </Select>
           </div>

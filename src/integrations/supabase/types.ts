@@ -117,6 +117,7 @@ export type Database = {
       }
       books: {
         Row: {
+          age_rating: string | null
           author: string
           borrowed_at: string | null
           borrowed_by: string | null
@@ -132,6 +133,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          age_rating?: string | null
           author: string
           borrowed_at?: string | null
           borrowed_by?: string | null
@@ -147,6 +149,7 @@ export type Database = {
           title: string
         }
         Update: {
+          age_rating?: string | null
           author?: string
           borrowed_at?: string | null
           borrowed_by?: string | null

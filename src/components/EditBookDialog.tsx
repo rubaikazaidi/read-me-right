@@ -24,6 +24,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [author, setAuthor] = useState(book.author);
   const [isbn, setIsbn] = useState(book.isbn);
   const [category, setCategory] = useState(book.category);
+  const [ageRating, setAgeRating] = useState((book as any).age_rating || "");
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setAuthor(book.author);
     setIsbn(book.isbn);
     setCategory(book.category);
+    setAgeRating((book as any).age_rating || "");
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
@@ -138,6 +140,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           isbn,
           category,
           cover_image_url: finalCoverUrl,
+          age_rating: ageRating || null,
         })
         .eq("id", book.id);
 
@@ -195,6 +198,23 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 <SelectItem value="Technology">Technology</SelectItem>
                 <SelectItem value="Textbooks">Textbooks</SelectItem>
                 <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-age-rating">Age Rating</Label>
+            <Select value={ageRating} onValueChange={setAgeRating}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select age rating (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="5+">5+</SelectItem>
+                <SelectItem value="8+">8+</SelectItem>
+                <SelectItem value="10+">10+</SelectItem>
+                <SelectItem value="13+">13+</SelectItem>
+                <SelectItem value="16+">16+</SelectItem>
+                <SelectItem value="18+">18+</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -28,6 +28,7 @@ interface Profile {
   id: string;
   full_name: string;
   email: string | null;
+  age: number | null;
 }
 
 interface ApprovedRequest {
@@ -58,6 +59,8 @@ export function AssignBookDialog({
   const [assigning, setAssigning] = useState(false);
   const [approvedRequest, setApprovedRequest] = useState<ApprovedRequest | null>(null);
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
+  const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [bookAgeRating, setBookAgeRating] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,9 +69,20 @@ export function AssignBookDialog({
       setStudents([]);
       setSelectedStudent(null);
       setApprovedRequest(null);
+      setShowAgeWarning(false);
       fetchApprovedRequest();
+      fetchBookAgeRating();
     }
   }, [open, bookId]);
+
+  const fetchBookAgeRating = async () => {
+    const { data } = await supabase
+      .from("books")
+      .select("age_rating")
+      .eq("id", bookId)
+      .maybeSingle();
+    setBookAgeRating(data?.age_rating || null);
+  };
 
   const fetchApprovedRequest = async () => {
     try {
@@ -110,7 +124,7 @@ export function AssignBookDialog({
       const safeSearchQuery = escapeILikePattern(searchQuery);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, age")
         .or(`full_name.ilike.%${safeSearchQuery}%,email.ilike.%${safeSearchQuery}%`);
 
       if (error) throw error;
@@ -209,9 +223,21 @@ export function AssignBookDialog({
     }
   };
 
+  const checkAgeRating = (studentAge: number | null, rating: string | null): boolean => {
+    if (!rating || rating === "all" || !studentAge) return true;
+    const minAge = parseInt(rating.replace("+", ""));
+    return !isNaN(minAge) && studentAge >= minAge;
+  };
+
   const handleAssign = async () => {
     if (!selectedStudent) {
       toast({ variant: "destructive", title: "Error", description: "Please select a student" });
+      return;
+    }
+
+    // Check age rating
+    if (bookAgeRating && !checkAgeRating(selectedStudent.age, bookAgeRating)) {
+      setShowAgeWarning(true);
       return;
     }
 
@@ -330,6 +356,41 @@ export function AssignBookDialog({
               className="bg-amber-600 hover:bg-amber-700 text-white"
             >
               Override & Assign
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Age rating warning dialog */}
+      <AlertDialog open={showAgeWarning} onOpenChange={setShowAgeWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Age Rating Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This book is rated <span className="font-semibold">{bookAgeRating}</span>, but{" "}
+              <span className="font-semibold">{selectedStudent?.full_name}</span> is{" "}
+              {selectedStudent?.age ? `${selectedStudent.age} years old` : "of unknown age"}.
+              <br /><br />
+              The student may not be suitable for this book's content. Do you still want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowAgeWarning(false);
+                if (approvedRequest && approvedRequest.user_id !== selectedStudent?.id) {
+                  setShowOverrideConfirm(true);
+                } else {
+                  await performAssign();
+                }
+              }}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Assign Anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
