@@ -59,6 +59,8 @@ export function AssignBookDialog({
   const [assigning, setAssigning] = useState(false);
   const [approvedRequest, setApprovedRequest] = useState<ApprovedRequest | null>(null);
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
+  const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [bookAgeRating, setBookAgeRating] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
