@@ -223,9 +223,21 @@ export function AssignBookDialog({
     }
   };
 
+  const checkAgeRating = (studentAge: number | null, rating: string | null): boolean => {
+    if (!rating || rating === "all" || !studentAge) return true;
+    const minAge = parseInt(rating.replace("+", ""));
+    return !isNaN(minAge) && studentAge >= minAge;
+  };
+
   const handleAssign = async () => {
     if (!selectedStudent) {
       toast({ variant: "destructive", title: "Error", description: "Please select a student" });
+      return;
+    }
+
+    // Check age rating
+    if (bookAgeRating && !checkAgeRating(selectedStudent.age, bookAgeRating)) {
+      setShowAgeWarning(true);
       return;
     }
 
