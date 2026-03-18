@@ -23,6 +23,7 @@ interface Profile {
   email: string | null;
   gr_number: string | null;
   grade: string | null;
+  age: number | null;
 }
 
 interface BookInfo {
