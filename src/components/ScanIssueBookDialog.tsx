@@ -239,6 +239,7 @@ export function ScanIssueBookDialog({
 
   const performIssue = async () => {
     if (!selectedStudent || !bookInfo) return;
+    setIssuing(true);
     try {
       const now = new Date();
       const { error } = await supabase
