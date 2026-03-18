@@ -69,9 +69,20 @@ export function AssignBookDialog({
       setStudents([]);
       setSelectedStudent(null);
       setApprovedRequest(null);
+      setShowAgeWarning(false);
       fetchApprovedRequest();
+      fetchBookAgeRating();
     }
   }, [open, bookId]);
+
+  const fetchBookAgeRating = async () => {
+    const { data } = await supabase
+      .from("books")
+      .select("age_rating")
+      .eq("id", bookId)
+      .maybeSingle();
+    setBookAgeRating(data?.age_rating || null);
+  };
 
   const fetchApprovedRequest = async () => {
     try {
