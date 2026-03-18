@@ -94,7 +94,7 @@ export function ScanIssueBookDialog({
         // QR scan: single book by ID
         const { data, error } = await supabase
           .from("books")
-          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number")
+          .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, organization_id, copy_number, age_rating")
           .eq("id", scanValue)
           .maybeSingle();
 
