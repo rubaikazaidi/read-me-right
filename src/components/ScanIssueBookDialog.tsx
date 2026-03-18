@@ -211,6 +211,12 @@ export function ScanIssueBookDialog({
     }
   };
 
+  const checkAgeRating = (studentAge: number | null, rating: string | null): boolean => {
+    if (!rating || rating === "all" || !studentAge) return true;
+    const minAge = parseInt(rating.replace("+", ""));
+    return !isNaN(minAge) && studentAge >= minAge;
+  };
+
   const handleIssue = async () => {
     if (!selectedStudent || !bookInfo) {
       toast({ variant: "destructive", title: "Error", description: "Please select a student" });
@@ -222,7 +228,17 @@ export function ScanIssueBookDialog({
       return;
     }
 
-    setIssuing(true);
+    // Check age rating
+    if (bookInfo.age_rating && !checkAgeRating(selectedStudent.age, bookInfo.age_rating)) {
+      setShowAgeWarning(true);
+      return;
+    }
+
+    await performIssue();
+  };
+
+  const performIssue = async () => {
+    if (!selectedStudent || !bookInfo) return;
     try {
       const now = new Date();
       const { error } = await supabase
