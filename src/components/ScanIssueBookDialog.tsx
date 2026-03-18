@@ -180,7 +180,7 @@ export function ScanIssueBookDialog({
       const safeSearchQuery = escapeILikePattern(searchQuery);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email, gr_number, grade")
+        .select("id, full_name, email, gr_number, grade, age")
         .or(`full_name.ilike.%${safeSearchQuery}%,email.ilike.%${safeSearchQuery}%,gr_number.ilike.%${safeSearchQuery}%`);
 
       if (error) throw error;
