@@ -140,6 +140,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           isbn,
           category,
           cover_image_url: finalCoverUrl,
+          age_rating: ageRating || null,
         })
         .eq("id", book.id);
 
