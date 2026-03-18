@@ -201,6 +201,23 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-age-rating">Age Rating</Label>
+            <Select value={ageRating} onValueChange={setAgeRating}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select age rating (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="5+">5+</SelectItem>
+                <SelectItem value="8+">8+</SelectItem>
+                <SelectItem value="10+">10+</SelectItem>
+                <SelectItem value="13+">13+</SelectItem>
+                <SelectItem value="16+">16+</SelectItem>
+                <SelectItem value="18+">18+</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Book Cover Section */}
           <div className="space-y-2">
