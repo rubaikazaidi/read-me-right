@@ -68,6 +68,7 @@ export function ScanIssueBookDialog({
   const [borrowerInfo, setBorrowerInfo] = useState<Profile | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
   const [bookError, setBookError] = useState<string | null>(null);
+  const [showAgeWarning, setShowAgeWarning] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
