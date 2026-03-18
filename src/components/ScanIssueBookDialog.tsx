@@ -147,7 +147,7 @@ export function ScanIssueBookDialog({
     if ((book.status === "borrowed" || book.status === "late") && book.borrowed_by) {
       const { data: borrower } = await supabase
         .from("profiles")
-        .select("id, full_name, email, gr_number, grade")
+        .select("id, full_name, email, gr_number, grade, age")
         .eq("id", book.borrowed_by)
         .maybeSingle();
       
