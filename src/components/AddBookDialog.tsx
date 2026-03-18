@@ -30,6 +30,7 @@ export function AddBookDialog({
   const [category, setCategory] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [ageRating, setAgeRating] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
