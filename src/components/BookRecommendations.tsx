@@ -25,7 +25,8 @@ export const BookRecommendations = ({
   userId, 
   allBooks, 
   onRequestBook,
-  userRequests
+  userRequests,
+  compact = false
 }: BookRecommendationsProps) => {
   const [recommendations, setRecommendations] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
