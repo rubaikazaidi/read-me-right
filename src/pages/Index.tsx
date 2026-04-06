@@ -314,6 +314,8 @@ const Index = () => {
       activeFilter={statusFilter} 
       userRole={userRole || undefined} 
       userId={user?.id}
+      onRequestBook={handleRequestBook}
+      userRequests={userRequests}
     >
       <div className="flex-1 bg-gradient-to-br from-background via-background/95 to-primary/5">
         <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
