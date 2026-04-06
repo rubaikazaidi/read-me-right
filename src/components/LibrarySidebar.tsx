@@ -28,7 +28,7 @@ interface LibrarySidebarProps {
   userRequests?: Record<string, { status: string; queue_position: number | null }>;
 }
 
-function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<LibrarySidebarProps, "children" | "userId">) {
+function SidebarStats({ books, onFilterChange, activeFilter, userRole, userId, onRequestBook, userRequests }: Omit<LibrarySidebarProps, "children">) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   
