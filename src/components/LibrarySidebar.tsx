@@ -1,6 +1,7 @@
 import { Book } from "@/types/book";
-import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu, Sparkles } from "lucide-react";
 import { BorrowingHistoryDialog } from "./BorrowingHistoryDialog";
+import { BookRecommendations } from "./BookRecommendations";
 import {
   Sidebar,
   SidebarContent,
@@ -23,9 +24,11 @@ interface LibrarySidebarProps {
   userRole?: string;
   userId?: string;
   children: React.ReactNode;
+  onRequestBook?: (bookId: string) => void;
+  userRequests?: Record<string, { status: string; queue_position: number | null }>;
 }
 
-function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<LibrarySidebarProps, "children" | "userId">) {
+function SidebarStats({ books, onFilterChange, activeFilter, userRole, userId, onRequestBook, userRequests }: Omit<LibrarySidebarProps, "children">) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   
@@ -139,12 +142,30 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<Li
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Recommendations for students */}
+        {userRole === "student" && userId && !isCollapsed && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Recommended For You
+            </SidebarGroupLabel>
+            <SidebarGroupContent className="px-2">
+              <BookRecommendations
+                userId={userId}
+                allBooks={books}
+                onRequestBook={onRequestBook}
+                userRequests={userRequests || {}}
+                compact
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
 }
 
-export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, userId, children }: LibrarySidebarProps) {
+export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, userId, children, onRequestBook, userRequests }: LibrarySidebarProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
@@ -152,7 +173,10 @@ export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, 
           books={books} 
           onFilterChange={onFilterChange} 
           activeFilter={activeFilter} 
-          userRole={userRole} 
+          userRole={userRole}
+          userId={userId}
+          onRequestBook={onRequestBook}
+          userRequests={userRequests}
         />
         <div className="flex-1 flex flex-col">
           {children}
