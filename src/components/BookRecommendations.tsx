@@ -209,6 +209,40 @@ export const BookRecommendations = ({
   ).length > 0;
 
   if (loading) {
+    if (compact) {
+      return (
+        <div className="space-y-2 py-2">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-md" />
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Recommended For You
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <Skeleton className="h-32 w-full" />
+              <CardContent className="p-3">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-3 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (recommendations.length === 0) {
+    return null;
+  }
+
   if (compact) {
     return (
       <div className="space-y-1.5 py-1">
@@ -265,7 +299,6 @@ export const BookRecommendations = ({
           </Button>
         )}
 
-        {/* Book Details Dialog for compact mode */}
         <Dialog open={!!selectedBook} onOpenChange={(open) => !open && setSelectedBook(null)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -302,40 +335,6 @@ export const BookRecommendations = ({
         </Dialog>
       </div>
     );
-  }
-
-  return (
-      return (
-        <div className="space-y-2 py-2">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-md" />
-          ))}
-        </div>
-      );
-    }
-    return (
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          Recommended For You
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="h-32 w-full" />
-              <CardContent className="p-3">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-3 w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (recommendations.length === 0) {
-    return null;
   }
 
   return (
