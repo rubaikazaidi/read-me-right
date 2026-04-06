@@ -142,12 +142,30 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole, userId, o
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Recommendations for students */}
+        {userRole === "student" && userId && !isCollapsed && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Recommended For You
+            </SidebarGroupLabel>
+            <SidebarGroupContent className="px-2">
+              <BookRecommendations
+                userId={userId}
+                allBooks={books}
+                onRequestBook={onRequestBook}
+                userRequests={userRequests || {}}
+                compact
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
 }
 
-export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, userId, children }: LibrarySidebarProps) {
+export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, userId, children, onRequestBook, userRequests }: LibrarySidebarProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
@@ -155,7 +173,10 @@ export function LibrarySidebar({ books, onFilterChange, activeFilter, userRole, 
           books={books} 
           onFilterChange={onFilterChange} 
           activeFilter={activeFilter} 
-          userRole={userRole} 
+          userRole={userRole}
+          userId={userId}
+          onRequestBook={onRequestBook}
+          userRequests={userRequests}
         />
         <div className="flex-1 flex flex-col">
           {children}
