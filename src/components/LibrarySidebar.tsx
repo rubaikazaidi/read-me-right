@@ -1,6 +1,7 @@
 import { Book } from "@/types/book";
-import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu, Sparkles } from "lucide-react";
 import { BorrowingHistoryDialog } from "./BorrowingHistoryDialog";
+import { BookRecommendations } from "./BookRecommendations";
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +24,8 @@ interface LibrarySidebarProps {
   userRole?: string;
   userId?: string;
   children: React.ReactNode;
+  onRequestBook?: (bookId: string) => void;
+  userRequests?: Record<string, { status: string; queue_position: number | null }>;
 }
 
 function SidebarStats({ books, onFilterChange, activeFilter, userRole }: Omit<LibrarySidebarProps, "children" | "userId">) {

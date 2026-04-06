@@ -431,14 +431,6 @@ const Index = () => {
             </Tabs>
           ) : (
             <>
-              {/* Book Recommendations Section for Students */}
-              <BookRecommendations
-                userId={user.id}
-                allBooks={books}
-                onRequestBook={handleRequestBook}
-                userRequests={userRequests}
-              />
-
               {/* My Borrowed Books Section for Students */}
               {(() => {
                 const myBorrowedBooks = books.filter(
