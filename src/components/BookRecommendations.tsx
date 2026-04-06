@@ -209,7 +209,102 @@ export const BookRecommendations = ({
   ).length > 0;
 
   if (loading) {
-    if (compact) {
+  if (compact) {
+    return (
+      <div className="space-y-1.5 py-1">
+        {recommendations.slice(0, 5).map((book) => {
+          const userRequest = userRequests[book.id];
+          const hasRequest = !!userRequest;
+          return (
+            <div
+              key={book.id}
+              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 cursor-pointer transition-colors"
+              onClick={() => setSelectedBook(book)}
+            >
+              <div className="w-8 h-11 rounded overflow-hidden bg-muted flex-shrink-0">
+                {book.cover_image_url ? (
+                  <img src={book.cover_image_url} alt={book.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{book.title}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{book.author}</p>
+              </div>
+              {hasRequest ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Queued</Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[10px]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRequestBook?.(book.id);
+                  }}
+                >
+                  Borrow
+                </Button>
+              )}
+            </div>
+          );
+        })}
+        {hasMoreBooks && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadMoreRecommendations}
+            disabled={loadingMore}
+            className="w-full text-xs h-7 mt-1"
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${loadingMore ? 'animate-spin' : ''}`} />
+            {loadingMore ? 'Loading...' : 'More'}
+          </Button>
+        )}
+
+        {/* Book Details Dialog for compact mode */}
+        <Dialog open={!!selectedBook} onOpenChange={(open) => !open && setSelectedBook(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedBook?.title}</DialogTitle>
+            </DialogHeader>
+            {selectedBook && (
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  {selectedBook.cover_image_url ? (
+                    <img src={selectedBook.cover_image_url} alt={selectedBook.title} className="w-24 h-36 object-cover rounded-lg shadow-md" />
+                  ) : (
+                    <div className="w-24 h-36 bg-muted rounded-lg flex items-center justify-center">
+                      <BookOpen className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm"><span className="font-medium text-muted-foreground">Author:</span> {selectedBook.author}</p>
+                    <p className="text-sm"><span className="font-medium text-muted-foreground">Genre:</span> <Badge variant="outline">{selectedBook.category}</Badge></p>
+                    <p className="text-sm"><span className="font-medium text-muted-foreground">ISBN:</span> {selectedBook.isbn}</p>
+                    <p className="text-sm"><span className="font-medium text-muted-foreground">Status:</span> <Badge variant={selectedBook.status === "available" ? "default" : "secondary"}>{selectedBook.status === "available" ? "Available" : "Borrowed"}</Badge></p>
+                  </div>
+                </div>
+                {!userRequests[selectedBook.id] && selectedBook.status === "available" && (
+                  <Button className="w-full" onClick={() => { onRequestBook?.(selectedBook.id); setSelectedBook(null); }}>
+                    Borrow This Book
+                  </Button>
+                )}
+                {userRequests[selectedBook.id] && (
+                  <p className="text-center text-sm text-muted-foreground">You have already requested this book</p>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
       return (
         <div className="space-y-2 py-2">
           {[...Array(3)].map((_, i) => (
