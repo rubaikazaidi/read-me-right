@@ -13,6 +13,7 @@ interface BookRecommendationsProps {
   allBooks: Book[];
   onRequestBook?: (bookId: string) => void;
   userRequests: Record<string, { status: string; queue_position: number | null }>;
+  compact?: boolean;
 }
 
 interface CategoryCount {
