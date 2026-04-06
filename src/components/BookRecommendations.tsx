@@ -209,6 +209,15 @@ export const BookRecommendations = ({
   ).length > 0;
 
   if (loading) {
+    if (compact) {
+      return (
+        <div className="space-y-2 py-2">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-md" />
+          ))}
+        </div>
+      );
+    }
     return (
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
