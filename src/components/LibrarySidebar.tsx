@@ -2,6 +2,7 @@ import { Book } from "@/types/book";
 import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu, Sparkles } from "lucide-react";
 import { BorrowingHistoryDialog } from "./BorrowingHistoryDialog";
 import { BookRecommendations } from "./BookRecommendations";
+import { JoinRequestsPanel } from "./JoinRequestsPanel";
 import {
   Sidebar,
   SidebarContent,
