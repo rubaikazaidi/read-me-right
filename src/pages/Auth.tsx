@@ -20,8 +20,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  // SECURITY: Role is no longer selectable during signup
-  // All new users are students by default - librarian promotion requires admin action
+  const [signupRole, setSignupRole] = useState<"student" | "librarian">("student");
+  const [librarianOrgName, setLibrarianOrgName] = useState("");
   const [grade, setGrade] = useState("");
   const [age, setAge] = useState("");
   const [grNumber, setGrNumber] = useState("");
