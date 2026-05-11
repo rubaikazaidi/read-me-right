@@ -593,7 +593,7 @@ const Auth = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || (!isLogin && organizations.length === 0)}
+              disabled={loading || (!isLogin && signupRole === "student" && organizations.length === 0)}
             >
               {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
             </Button>
