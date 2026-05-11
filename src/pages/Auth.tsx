@@ -441,6 +441,27 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <>
+                {/* Role selector */}
+                <div className="space-y-2">
+                  <Label>I am signing up as</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={signupRole === "student" ? "default" : "outline"}
+                      onClick={() => setSignupRole("student")}
+                    >
+                      Student
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={signupRole === "librarian" ? "default" : "outline"}
+                      onClick={() => setSignupRole("librarian")}
+                    >
+                      Librarian
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
@@ -453,68 +474,86 @@ const Auth = () => {
                   />
                 </div>
 
-                {/* Student details - all new signups are students */}
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium text-muted-foreground">Student Details</p>
-                  
-                  {/* Organization selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="organization">School/Organization *</Label>
-                    {organizations.length > 0 ? (
-                      <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your organization" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {organizations.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>
-                              {org.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
-                        No organizations available. A librarian must create an organization first.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                {signupRole === "librarian" ? (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Librarian / Organization Details</p>
                     <div className="space-y-2">
-                      <Label htmlFor="grade">Grade</Label>
+                      <Label htmlFor="librarianOrgName">Organization Name *</Label>
                       <Input
-                        id="grade"
+                        id="librarianOrgName"
                         type="text"
-                        placeholder="e.g., 10th"
-                        value={grade}
-                        onChange={(e) => setGrade(e.target.value)}
+                        placeholder="e.g., Springfield High School Library"
+                        value={librarianOrgName}
+                        onChange={(e) => setLibrarianOrgName(e.target.value)}
+                        required
                       />
+                      <p className="text-xs text-muted-foreground">
+                        This name is case-sensitive and must be unique. Each librarian email can only manage one organization.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Student Details</p>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="organization">School/Organization *</Label>
+                      {organizations.length > 0 ? (
+                        <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your organization" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizations.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                          No organizations available. A librarian must create an organization first.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grade</Label>
+                        <Input
+                          id="grade"
+                          type="text"
+                          placeholder="e.g., 10th"
+                          value={grade}
+                          onChange={(e) => setGrade(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="5"
+                          max="100"
+                          placeholder="e.g., 16"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
+                      <Label htmlFor="grNumber">GR Number</Label>
                       <Input
-                        id="age"
-                        type="number"
-                        min="5"
-                        max="100"
-                        placeholder="e.g., 16"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
+                        id="grNumber"
+                        type="text"
+                        placeholder="e.g., GR-12345"
+                        value={grNumber}
+                        onChange={(e) => setGrNumber(e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="grNumber">GR Number</Label>
-                    <Input
-                      id="grNumber"
-                      type="text"
-                      placeholder="e.g., GR-12345"
-                      value={grNumber}
-                      onChange={(e) => setGrNumber(e.target.value)}
-                    />
-                  </div>
-                </div>
+                )}
               </>
             )}
             <div className="space-y-2">
