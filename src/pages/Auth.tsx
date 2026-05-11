@@ -228,27 +228,35 @@ const Auth = () => {
         });
         navigate("/");
       } else {
-        // Validate student has selected an organization
-        if (!selectedOrganizationId) {
-          toast({
-            variant: "destructive",
-            title: "Organization required",
-            description: "Please select your school/organization.",
-          });
-          setLoading(false);
-          return;
+        if (signupRole === "student") {
+          if (!selectedOrganizationId) {
+            toast({
+              variant: "destructive",
+              title: "Organization required",
+              description: "Please select your school/organization.",
+            });
+            setLoading(false);
+            return;
+          }
+        } else {
+          if (!librarianOrgName.trim()) {
+            toast({
+              variant: "destructive",
+              title: "Organization name required",
+              description: "Please enter the name of the organization you want to create.",
+            });
+            setLoading(false);
+            return;
+          }
         }
 
-        // SECURITY: Do not include role in signup metadata
-        // All users are assigned 'student' role by default in handle_new_user trigger
-        // Role promotion to librarian must be done through a separate secure process
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-              // Note: role is NOT sent here - server always assigns 'student' by default
+              role: signupRole, // server trigger only honors 'librarian' or defaults to student
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -257,29 +265,61 @@ const Auth = () => {
         if (error) throw error;
 
         if (authData.user) {
-          // All users are students by default - create profile with selected organization
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .insert({
-              id: authData.user.id,
-              full_name: fullName,
-              email: email,
-              grade: grade || null,
-              organization_id: selectedOrganizationId,
-              age: age ? parseInt(age) : null,
-              gr_number: grNumber || null,
+          if (signupRole === "librarian") {
+            // Create the organization (unique constraint enforces 1 org per email)
+            const { data: orgData, error: orgError } = await supabase
+              .from("organizations")
+              .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
+              .select()
+              .single();
+
+            if (orgError) {
+              if (orgError.code === "23505") {
+                throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+              }
+              throw orgError;
+            }
+
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .insert({
+                id: authData.user.id,
+                full_name: fullName,
+                email: email,
+                organization_id: orgData.id,
+              });
+
+            if (profileError) throw profileError;
+
+            toast({
+              title: "Organization created!",
+              description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
             });
+            navigate("/");
+          } else {
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .insert({
+                id: authData.user.id,
+                full_name: fullName,
+                email: email,
+                grade: grade || null,
+                organization_id: selectedOrganizationId,
+                age: age ? parseInt(age) : null,
+                gr_number: grNumber || null,
+              });
 
-          if (profileError) {
-            console.error("Error creating student profile:", profileError);
-            throw profileError;
+            if (profileError) {
+              console.error("Error creating student profile:", profileError);
+              throw profileError;
+            }
+
+            toast({
+              title: "Account created!",
+              description: "You have successfully signed up as a student.",
+            });
+            navigate("/");
           }
-
-          toast({
-            title: "Account created!",
-            description: "You have successfully signed up as a student.",
-          });
-          navigate("/");
         }
       }
     } catch (error: any) {
