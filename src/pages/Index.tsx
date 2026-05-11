@@ -307,6 +307,29 @@ const Index = () => {
     return null;
   }
 
+  // Student signed up but is not yet a member of any organization
+  if (userRole === "student" && !organizationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold">Awaiting Librarian Approval</h2>
+            <p className="text-sm text-muted-foreground">
+              Your request to join the organization has been sent. You'll be able to access the library once a librarian approves your request.
+            </p>
+            <Button variant="outline" onClick={handleSignOut} className="mt-2">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <LibrarySidebar 
       books={books} 

@@ -2,6 +2,7 @@ import { Book } from "@/types/book";
 import { BookOpen, CheckCircle2, Clock, AlertCircle, History, Menu, Sparkles } from "lucide-react";
 import { BorrowingHistoryDialog } from "./BorrowingHistoryDialog";
 import { BookRecommendations } from "./BookRecommendations";
+import { JoinRequestsPanel } from "./JoinRequestsPanel";
 import {
   Sidebar,
   SidebarContent,
@@ -157,6 +158,18 @@ function SidebarStats({ books, onFilterChange, activeFilter, userRole, userId, o
                 userRequests={userRequests || {}}
                 compact
               />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Join requests for librarians */}
+        {userRole === "librarian" && !isCollapsed && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Join Requests
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <JoinRequestsPanel />
             </SidebarGroupContent>
           </SidebarGroup>
         )}

@@ -297,6 +297,7 @@ const Auth = () => {
             });
             navigate("/");
           } else {
+            // Create profile WITHOUT organization_id — student will be added once librarian approves
             const { error: profileError } = await supabase
               .from("profiles")
               .insert({
@@ -304,7 +305,7 @@ const Auth = () => {
                 full_name: fullName,
                 email: email,
                 grade: grade || null,
-                organization_id: selectedOrganizationId,
+                organization_id: null,
                 age: age ? parseInt(age) : null,
                 gr_number: grNumber || null,
               });
@@ -314,9 +315,27 @@ const Auth = () => {
               throw profileError;
             }
 
+            // Create join request for the librarian to review
+            const { error: reqError } = await supabase
+              .from("organization_join_requests")
+              .insert({
+                user_id: authData.user.id,
+                organization_id: selectedOrganizationId,
+                full_name: fullName,
+                email: email,
+                grade: grade || null,
+                age: age ? parseInt(age) : null,
+                gr_number: grNumber || null,
+              });
+
+            if (reqError) {
+              console.error("Error creating join request:", reqError);
+              throw reqError;
+            }
+
             toast({
-              title: "Account created!",
-              description: "You have successfully signed up as a student.",
+              title: "Request sent!",
+              description: "Your account was created. The librarian will review your request to join the organization.",
             });
             navigate("/");
           }
