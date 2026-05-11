@@ -248,6 +248,51 @@ export type Database = {
           },
         ]
       }
+      organization_join_requests: {
+        Row: {
+          account_created_at: string
+          age: number | null
+          created_at: string
+          email: string | null
+          full_name: string
+          gr_number: string | null
+          grade: string | null
+          id: string
+          organization_id: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_created_at?: string
+          age?: number | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          gr_number?: string | null
+          grade?: string | null
+          id?: string
+          organization_id: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_created_at?: string
+          age?: number | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          gr_number?: string | null
+          grade?: string | null
+          id?: string
+          organization_id?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
@@ -360,6 +405,14 @@ export type Database = {
       }
     }
     Functions: {
+      approve_join_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
+      decline_join_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       get_next_queue_position: {
         Args: { book_id_param: string }
         Returns: number
