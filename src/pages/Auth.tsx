@@ -20,8 +20,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  // SECURITY: Role is no longer selectable during signup
-  // All new users are students by default - librarian promotion requires admin action
+  const [signupRole, setSignupRole] = useState<"student" | "librarian">("student");
+  const [librarianOrgName, setLibrarianOrgName] = useState("");
   const [grade, setGrade] = useState("");
   const [age, setAge] = useState("");
   const [grNumber, setGrNumber] = useState("");
@@ -228,27 +228,35 @@ const Auth = () => {
         });
         navigate("/");
       } else {
-        // Validate student has selected an organization
-        if (!selectedOrganizationId) {
-          toast({
-            variant: "destructive",
-            title: "Organization required",
-            description: "Please select your school/organization.",
-          });
-          setLoading(false);
-          return;
+        if (signupRole === "student") {
+          if (!selectedOrganizationId) {
+            toast({
+              variant: "destructive",
+              title: "Organization required",
+              description: "Please select your school/organization.",
+            });
+            setLoading(false);
+            return;
+          }
+        } else {
+          if (!librarianOrgName.trim()) {
+            toast({
+              variant: "destructive",
+              title: "Organization name required",
+              description: "Please enter the name of the organization you want to create.",
+            });
+            setLoading(false);
+            return;
+          }
         }
 
-        // SECURITY: Do not include role in signup metadata
-        // All users are assigned 'student' role by default in handle_new_user trigger
-        // Role promotion to librarian must be done through a separate secure process
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-              // Note: role is NOT sent here - server always assigns 'student' by default
+              role: signupRole, // server trigger only honors 'librarian' or defaults to student
             },
             emailRedirectTo: `${window.location.origin}/`,
           },
@@ -257,29 +265,61 @@ const Auth = () => {
         if (error) throw error;
 
         if (authData.user) {
-          // All users are students by default - create profile with selected organization
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .insert({
-              id: authData.user.id,
-              full_name: fullName,
-              email: email,
-              grade: grade || null,
-              organization_id: selectedOrganizationId,
-              age: age ? parseInt(age) : null,
-              gr_number: grNumber || null,
+          if (signupRole === "librarian") {
+            // Create the organization (unique constraint enforces 1 org per email)
+            const { data: orgData, error: orgError } = await supabase
+              .from("organizations")
+              .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
+              .select()
+              .single();
+
+            if (orgError) {
+              if (orgError.code === "23505") {
+                throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+              }
+              throw orgError;
+            }
+
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .insert({
+                id: authData.user.id,
+                full_name: fullName,
+                email: email,
+                organization_id: orgData.id,
+              });
+
+            if (profileError) throw profileError;
+
+            toast({
+              title: "Organization created!",
+              description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
             });
+            navigate("/");
+          } else {
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .insert({
+                id: authData.user.id,
+                full_name: fullName,
+                email: email,
+                grade: grade || null,
+                organization_id: selectedOrganizationId,
+                age: age ? parseInt(age) : null,
+                gr_number: grNumber || null,
+              });
 
-          if (profileError) {
-            console.error("Error creating student profile:", profileError);
-            throw profileError;
+            if (profileError) {
+              console.error("Error creating student profile:", profileError);
+              throw profileError;
+            }
+
+            toast({
+              title: "Account created!",
+              description: "You have successfully signed up as a student.",
+            });
+            navigate("/");
           }
-
-          toast({
-            title: "Account created!",
-            description: "You have successfully signed up as a student.",
-          });
-          navigate("/");
         }
       }
     } catch (error: any) {
@@ -401,6 +441,27 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <>
+                {/* Role selector */}
+                <div className="space-y-2">
+                  <Label>I am signing up as</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={signupRole === "student" ? "default" : "outline"}
+                      onClick={() => setSignupRole("student")}
+                    >
+                      Student
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={signupRole === "librarian" ? "default" : "outline"}
+                      onClick={() => setSignupRole("librarian")}
+                    >
+                      Librarian
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
@@ -413,68 +474,86 @@ const Auth = () => {
                   />
                 </div>
 
-                {/* Student details - all new signups are students */}
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium text-muted-foreground">Student Details</p>
-                  
-                  {/* Organization selection */}
-                  <div className="space-y-2">
-                    <Label htmlFor="organization">School/Organization *</Label>
-                    {organizations.length > 0 ? (
-                      <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your organization" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {organizations.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>
-                              {org.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
-                        No organizations available. A librarian must create an organization first.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                {signupRole === "librarian" ? (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Librarian / Organization Details</p>
                     <div className="space-y-2">
-                      <Label htmlFor="grade">Grade</Label>
+                      <Label htmlFor="librarianOrgName">Organization Name *</Label>
                       <Input
-                        id="grade"
+                        id="librarianOrgName"
                         type="text"
-                        placeholder="e.g., 10th"
-                        value={grade}
-                        onChange={(e) => setGrade(e.target.value)}
+                        placeholder="e.g., Springfield High School Library"
+                        value={librarianOrgName}
+                        onChange={(e) => setLibrarianOrgName(e.target.value)}
+                        required
                       />
+                      <p className="text-xs text-muted-foreground">
+                        This name is case-sensitive and must be unique. Each librarian email can only manage one organization.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Student Details</p>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="organization">School/Organization *</Label>
+                      {organizations.length > 0 ? (
+                        <Select value={selectedOrganizationId} onValueChange={setSelectedOrganizationId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your organization" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizations.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                          No organizations available. A librarian must create an organization first.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grade</Label>
+                        <Input
+                          id="grade"
+                          type="text"
+                          placeholder="e.g., 10th"
+                          value={grade}
+                          onChange={(e) => setGrade(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="5"
+                          max="100"
+                          placeholder="e.g., 16"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
+                      <Label htmlFor="grNumber">GR Number</Label>
                       <Input
-                        id="age"
-                        type="number"
-                        min="5"
-                        max="100"
-                        placeholder="e.g., 16"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
+                        id="grNumber"
+                        type="text"
+                        placeholder="e.g., GR-12345"
+                        value={grNumber}
+                        onChange={(e) => setGrNumber(e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="grNumber">GR Number</Label>
-                    <Input
-                      id="grNumber"
-                      type="text"
-                      placeholder="e.g., GR-12345"
-                      value={grNumber}
-                      onChange={(e) => setGrNumber(e.target.value)}
-                    />
-                  </div>
-                </div>
+                )}
               </>
             )}
             <div className="space-y-2">
@@ -514,7 +593,7 @@ const Auth = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || (!isLogin && organizations.length === 0)}
+              disabled={loading || (!isLogin && signupRole === "student" && organizations.length === 0)}
             >
               {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
             </Button>
