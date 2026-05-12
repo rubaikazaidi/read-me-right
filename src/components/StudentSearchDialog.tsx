@@ -8,6 +8,7 @@ import { Users, Search, User, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EditStudentProfileDialog } from "@/components/EditStudentProfileDialog";
 import { escapeILikePattern, isValidSearchTerm } from "@/lib/security";
+import { useOrganization } from "@/hooks/useOrganization";
 
 interface StudentProfile {
   id: string;
@@ -21,9 +22,11 @@ interface StudentProfile {
 
 const StudentSearchDialog = () => {
   const navigate = useNavigate();
+  const { organization } = useOrganization();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [searchLoading, setSearchLoading] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentProfile | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -70,6 +73,39 @@ const StudentSearchDialog = () => {
     }
   }, []);
 
+  const fetchTotalStudents = useCallback(async () => {
+    try {
+      const { data: studentRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "student");
+
+      const studentIds = studentRoles?.map(r => r.user_id) || [];
+      if (studentIds.length === 0) {
+        setTotalStudents(0);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .in("id", studentIds);
+
+      if (!error) {
+        setTotalStudents(count || 0);
+      }
+    } catch (error) {
+      console.error("Error counting students:", error);
+    }
+  }, []);
+
+  // Fetch total when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchTotalStudents();
+    }
+  }, [open, fetchTotalStudents]);
+
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -100,6 +136,7 @@ const StudentSearchDialog = () => {
     if (!isOpen) {
       setSearchTerm("");
       setStudents([]);
+      setTotalStudents(0);
     }
   };
 
@@ -118,6 +155,10 @@ const StudentSearchDialog = () => {
               <Users className="h-5 w-5" />
               Student Search
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {organization?.name ? `${organization.name} · ` : ""}
+              {totalStudents} student{totalStudents !== 1 ? "s" : ""} in organization
+            </p>
           </DialogHeader>
 
           <div className="space-y-4">
