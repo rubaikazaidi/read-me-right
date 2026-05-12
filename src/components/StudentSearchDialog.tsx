@@ -136,6 +136,7 @@ const StudentSearchDialog = () => {
     if (!isOpen) {
       setSearchTerm("");
       setStudents([]);
+      setTotalStudents(0);
     }
   };
 
