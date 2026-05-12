@@ -82,7 +82,7 @@ export const JoinRequestsPanel = () => {
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <UserPlus className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-medium text-sm truncate">{req.full_name}</span>
+              <span className="font-medium text-sm truncate text-black">{req.full_name}</span>
             </div>
             <Badge variant="outline" className="text-[10px]">Pending</Badge>
           </div>
@@ -127,7 +127,7 @@ export const JoinRequestsPanel = () => {
             <Button
               size="sm"
               variant="outline"
-              className="h-7 flex-1 text-xs"
+              className="h-7 flex-1 text-xs text-black"
               onClick={() => handleDecline(req.id)}
               disabled={actingId === req.id}
             >
