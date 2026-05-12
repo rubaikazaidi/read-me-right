@@ -73,6 +73,39 @@ const StudentSearchDialog = () => {
     }
   }, []);
 
+  const fetchTotalStudents = useCallback(async () => {
+    try {
+      const { data: studentRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "student");
+
+      const studentIds = studentRoles?.map(r => r.user_id) || [];
+      if (studentIds.length === 0) {
+        setTotalStudents(0);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .in("id", studentIds);
+
+      if (!error) {
+        setTotalStudents(count || 0);
+      }
+    } catch (error) {
+      console.error("Error counting students:", error);
+    }
+  }, []);
+
+  // Fetch total when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchTotalStudents();
+    }
+  }, [open, fetchTotalStudents]);
+
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
