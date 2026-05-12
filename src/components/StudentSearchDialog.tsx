@@ -8,6 +8,7 @@ import { Users, Search, User, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EditStudentProfileDialog } from "@/components/EditStudentProfileDialog";
 import { escapeILikePattern, isValidSearchTerm } from "@/lib/security";
+import { useOrganization } from "@/hooks/useOrganization";
 
 interface StudentProfile {
   id: string;
