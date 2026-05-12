@@ -429,6 +429,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_public_organizations: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "student" | "librarian"
