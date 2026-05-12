@@ -155,6 +155,10 @@ const StudentSearchDialog = () => {
               <Users className="h-5 w-5" />
               Student Search
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {organization?.name ? `${organization.name} · ` : ""}
+              {totalStudents} student{totalStudents !== 1 ? "s" : ""} in organization
+            </p>
           </DialogHeader>
 
           <div className="space-y-4">
