@@ -22,9 +22,11 @@ interface StudentProfile {
 
 const StudentSearchDialog = () => {
   const navigate = useNavigate();
+  const { organization } = useOrganization();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [searchLoading, setSearchLoading] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentProfile | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
