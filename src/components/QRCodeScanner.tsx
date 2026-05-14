@@ -126,43 +126,45 @@ export function QRCodeScanner({
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current && isScanning) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current = null;
-        setIsScanning(false);
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
+    const instance = scannerRef.current;
+    if (!instance) {
+      setIsScanning(false);
+      return;
+    }
+    scannerRef.current = null;
+    try {
+      // Only stop if it's actually scanning to avoid throwing
+      const state = instance.getState?.();
+      // 2 === SCANNING in Html5QrcodeScannerState
+      if (state === 2) {
+        await instance.stop();
       }
+      try { instance.clear(); } catch {}
+    } catch (err) {
+      console.warn("Scanner stop warning:", err);
+    } finally {
+      if (isMountedRef.current) setIsScanning(false);
     }
   };
 
   const handleCodeScanned = async (decodedText: string, format?: string) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     await stopScanner();
-    
+
     const isBarcode = ["EAN_13", "EAN_8", "CODE_128", "CODE_39", "UPC_A", "UPC_E"].includes(format || "");
     const isQRCode = format === "QR_CODE";
-    
-    // Helper to safely restart scanner with delay
-    const safeRestartScanner = () => {
-      if (isMountedRef.current) {
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            startScanner();
-          }
-        }, 500);
-      }
-    };
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const cleanedCode = decodedText.replace(/[- ]/g, "");
+    const trimmed = decodedText.trim();
+    const cleanedCode = trimmed.replace(/[-\s]/g, "");
 
     // Try to extract a UUID from QR codes or URL-like content
-    if (isQRCode || decodedText.includes("/book/")) {
-      let bookId = decodedText;
-      if (decodedText.includes("/book/")) {
-        const parts = decodedText.split("/book/");
-        bookId = parts[parts.length - 1];
+    if (isQRCode || trimmed.includes("/book/")) {
+      let bookId = trimmed;
+      if (trimmed.includes("/book/")) {
+        const parts = trimmed.split("/book/");
+        bookId = parts[parts.length - 1].split(/[?#]/)[0];
       }
       if (uuidRegex.test(bookId)) {
         setLastScanType("qr");
@@ -180,18 +182,29 @@ export function QRCodeScanner({
       return;
     }
 
-    // Check content-based detection for unknown formats
-    if (uuidRegex.test(decodedText)) {
+    // Last-ditch: UUID anywhere in the text
+    if (uuidRegex.test(trimmed)) {
       setLastScanType("qr");
-      onScan({ type: "qr", value: decodedText });
+      onScan({ type: "qr", value: trimmed });
       onOpenChange(false);
-    } else {
+      return;
+    }
+
+    // Unrecognized — show toast at most once every 3s and resume scanning
+    const now = Date.now();
+    if (now - lastErrorAtRef.current > 3000) {
+      lastErrorAtRef.current = now;
       toast({
         variant: "destructive",
         title: "Unrecognized Code",
         description: "Could not identify this as a book QR code or barcode.",
       });
-      safeRestartScanner();
+    }
+    isProcessingRef.current = false;
+    if (isMountedRef.current) {
+      setTimeout(() => {
+        if (isMountedRef.current && !scannerRef.current) startScanner();
+      }, 800);
     }
   };
 
