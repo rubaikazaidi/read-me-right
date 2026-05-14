@@ -40,6 +40,8 @@ export function QRCodeScanner({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isStartingRef = useRef(false);
   const isMountedRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  const lastErrorAtRef = useRef(0);
   const { toast } = useToast();
 
   const startScanner = async () => {
