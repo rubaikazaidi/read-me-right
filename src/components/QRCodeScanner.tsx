@@ -213,6 +213,8 @@ export function QRCodeScanner({
     
     if (open) {
       setLastScanType(null);
+      isProcessingRef.current = false;
+      lastErrorAtRef.current = 0;
       // Small delay to ensure the DOM element is rendered
       setTimeout(() => {
         if (isMountedRef.current) {
