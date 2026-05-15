@@ -25,6 +25,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [isbn, setIsbn] = useState(book.isbn);
   const [category, setCategory] = useState(book.category);
   const [ageRating, setAgeRating] = useState((book as any).age_rating || "");
+  const [deweyDecimal, setDeweyDecimal] = useState((book as any).dewey_decimal || "");
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
