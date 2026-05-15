@@ -388,6 +388,15 @@ export function AddBookDialog({
             </Select>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="dewey">Dewey Decimal Classification</Label>
+            <Input
+              id="dewey"
+              value={deweyDecimal}
+              onChange={(e) => setDeweyDecimal(e.target.value)}
+              placeholder="e.g. 813.54 (auto-filled from category if blank)"
+            />
+          </div>
+          <div className="space-y-2">
             <Label>Book Cover</Label>
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
