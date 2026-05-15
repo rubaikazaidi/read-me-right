@@ -231,19 +231,20 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-category">Category</Label>
-            <Select value={category} onValueChange={setCategory} required>
+            <Select value={category} onValueChange={handleCategoryChange} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Fiction">Fiction</SelectItem>
-                <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
-                <SelectItem value="Science">Science</SelectItem>
-                <SelectItem value="History">History</SelectItem>
-                <SelectItem value="Biography">Biography</SelectItem>
-                <SelectItem value="Technology">Technology</SelectItem>
-                <SelectItem value="Textbooks">Textbooks</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                {DEFAULT_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                {customCategories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                <SelectItem value="__add_new__" className="text-primary font-medium">
+                  + Add new category…
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
