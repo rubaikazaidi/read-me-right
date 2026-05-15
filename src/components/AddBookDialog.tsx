@@ -247,6 +247,12 @@ export function AddBookDialog({
         finalCoverUrl = publicUrl;
       }
 
+      const deweyDefaults: Record<string, string> = {
+        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
+        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
+      };
+      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+
       const { error } = await supabase.from("books").insert({
         title,
         author,
@@ -257,7 +263,8 @@ export function AddBookDialog({
         organization_id: organizationId,
         copy_number: copyNumber,
         age_rating: ageRating || null,
-      });
+        dewey_decimal: finalDewey,
+      } as any);
 
       if (error) throw error;
 
@@ -275,6 +282,7 @@ export function AddBookDialog({
       setCoverUrl("");
       setCoverFile(null);
       setAgeRating("");
+      setDeweyDecimal("");
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
