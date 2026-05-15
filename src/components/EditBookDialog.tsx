@@ -78,6 +78,41 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setCoverPreview(null);
   }, [book]);
 
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.from("book_categories").select("name").order("name");
+      if (data) {
+        const names = data.map((c: any) => c.name).filter((n: string) => !DEFAULT_CATEGORIES.includes(n));
+        setCustomCategories(names);
+      }
+    })();
+  }, [open]);
+
+  const handleCategoryChange = async (value: string) => {
+    if (value === "__add_new__") {
+      const name = window.prompt("Enter new category name:")?.trim();
+      if (!name) return;
+      const all = [...DEFAULT_CATEGORIES, ...customCategories];
+      if (all.some((c) => c.toLowerCase() === name.toLowerCase())) {
+        toast({ variant: "destructive", title: "Category exists", description: `"${name}" already exists.` });
+        return;
+      }
+      const { error } = await supabase
+        .from("book_categories")
+        .insert({ name, organization_id: organizationId });
+      if (error) {
+        toast({ variant: "destructive", title: "Error", description: error.message });
+        return;
+      }
+      setCustomCategories((prev) => [...prev, name]);
+      setCategory(name);
+      toast({ title: "Category added", description: `"${name}" is now available.` });
+      return;
+    }
+    setCategory(value);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
