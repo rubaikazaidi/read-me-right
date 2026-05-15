@@ -180,6 +180,8 @@ export function ScanIssueBookDialog({
         if (!data || data.length === 0) {
           setBookError(`No book found with ISBN: ${scanValue}`);
           setBookInfo(null);
+          // Try to fetch details from external sources so the librarian can preview before adding
+          lookupExternalIsbn(scanValue);
           return;
         }
 
