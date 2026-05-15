@@ -28,6 +28,8 @@ export function AddBookDialog({
   const [author, setAuthor] = useState("");
   const [isbn, setIsbn] = useState("");
   const [category, setCategory] = useState("");
+  const DEFAULT_CATEGORIES = ["Fiction", "Non-Fiction", "Science", "History", "Biography", "Technology", "Textbooks", "Other"];
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [coverUrl, setCoverUrl] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [ageRating, setAgeRating] = useState("");
