@@ -13,6 +13,8 @@ export interface Book {
   created_at?: string;
   cover_image_url?: string | null;
   copy_number?: number;
+  dewey_decimal?: string | null;
+  age_rating?: string | null;
 }
 
 export interface GroupedBook extends Book {
