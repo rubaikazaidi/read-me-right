@@ -227,6 +227,15 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-dewey">Dewey Decimal Classification</Label>
+            <Input
+              id="edit-dewey"
+              value={deweyDecimal}
+              onChange={(e) => setDeweyDecimal(e.target.value)}
+              placeholder="e.g. 813.54"
+            />
+          </div>
 
           {/* Book Cover Section */}
           <div className="space-y-2">
