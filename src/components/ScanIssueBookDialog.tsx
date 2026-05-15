@@ -520,12 +520,37 @@ export function ScanIssueBookDialog({
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Book not found</p>
+                  <p className="font-medium">Not in your library</p>
                   {bookError && <p className="text-sm">{bookError}</p>}
                 </div>
               </div>
+
+              {lookupLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="h-3 w-3 rounded-full border-2 border-muted-foreground/40 border-t-transparent animate-spin" />
+                  Looking up book details online…
+                </div>
+              )}
+
+              {externalLookup && (
+                <div className="flex gap-3 p-3 bg-background rounded-md border">
+                  {externalLookup.cover && (
+                    <img
+                      src={externalLookup.cover}
+                      alt={externalLookup.title}
+                      className="w-14 h-20 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Found online:</p>
+                    <p className="font-semibold truncate">{externalLookup.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">by {externalLookup.author}</p>
+                  </div>
+                </div>
+              )}
+
               {scanType === "isbn" && onAddBook && (
-                <Button 
+                <Button
                   onClick={() => {
                     onAddBook(scanValue);
                     onOpenChange(false);
@@ -534,7 +559,7 @@ export function ScanIssueBookDialog({
                   variant="default"
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Add This Book to Library
+                  {externalLookup ? `Add "${externalLookup.title}" to Library` : "Add This Book to Library"}
                 </Button>
               )}
             </div>
