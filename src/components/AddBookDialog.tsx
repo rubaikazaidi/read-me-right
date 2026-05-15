@@ -31,6 +31,7 @@ export function AddBookDialog({
   const [coverUrl, setCoverUrl] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [ageRating, setAgeRating] = useState("");
+  const [deweyDecimal, setDeweyDecimal] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +247,12 @@ export function AddBookDialog({
         finalCoverUrl = publicUrl;
       }
 
+      const deweyDefaults: Record<string, string> = {
+        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
+        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
+      };
+      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+
       const { error } = await supabase.from("books").insert({
         title,
         author,
@@ -256,7 +263,8 @@ export function AddBookDialog({
         organization_id: organizationId,
         copy_number: copyNumber,
         age_rating: ageRating || null,
-      });
+        dewey_decimal: finalDewey,
+      } as any);
 
       if (error) throw error;
 
@@ -274,6 +282,7 @@ export function AddBookDialog({
       setCoverUrl("");
       setCoverFile(null);
       setAgeRating("");
+      setDeweyDecimal("");
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
@@ -377,6 +386,15 @@ export function AddBookDialog({
                 <SelectItem value="18+">18+</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dewey">Dewey Decimal Classification</Label>
+            <Input
+              id="dewey"
+              value={deweyDecimal}
+              onChange={(e) => setDeweyDecimal(e.target.value)}
+              placeholder="e.g. 813.54 (auto-filled from category if blank)"
+            />
           </div>
           <div className="space-y-2">
             <Label>Book Cover</Label>

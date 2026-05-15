@@ -25,6 +25,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [isbn, setIsbn] = useState(book.isbn);
   const [category, setCategory] = useState(book.category);
   const [ageRating, setAgeRating] = useState((book as any).age_rating || "");
+  const [deweyDecimal, setDeweyDecimal] = useState((book as any).dewey_decimal || "");
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setIsbn(book.isbn);
     setCategory(book.category);
     setAgeRating((book as any).age_rating || "");
+    setDeweyDecimal((book as any).dewey_decimal || "");
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
@@ -132,6 +134,12 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
         finalCoverUrl = null;
       }
 
+      const deweyDefaults: Record<string, string> = {
+        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
+        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
+      };
+      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+
       const { error } = await supabase
         .from("books")
         .update({
@@ -141,7 +149,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           category,
           cover_image_url: finalCoverUrl,
           age_rating: ageRating || null,
-        })
+          dewey_decimal: finalDewey,
+        } as any)
         .eq("id", book.id);
 
       if (error) throw error;
@@ -217,6 +226,15 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 <SelectItem value="18+">18+</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-dewey">Dewey Decimal Classification</Label>
+            <Input
+              id="edit-dewey"
+              value={deweyDecimal}
+              onChange={(e) => setDeweyDecimal(e.target.value)}
+              placeholder="e.g. 813.54"
+            />
           </div>
 
           {/* Book Cover Section */}
