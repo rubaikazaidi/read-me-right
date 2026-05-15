@@ -24,6 +24,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [author, setAuthor] = useState(book.author);
   const [isbn, setIsbn] = useState(book.isbn);
   const [category, setCategory] = useState(book.category);
+  const DEFAULT_CATEGORIES = ["Fiction", "Non-Fiction", "Science", "History", "Biography", "Technology", "Textbooks", "Other"];
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [ageRating, setAgeRating] = useState((book as any).age_rating || "");
   const [deweyDecimal, setDeweyDecimal] = useState((book as any).dewey_decimal || "");
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
@@ -75,6 +77,41 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setCoverFile(null);
     setCoverPreview(null);
   }, [book]);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.from("book_categories").select("name").order("name");
+      if (data) {
+        const names = data.map((c: any) => c.name).filter((n: string) => !DEFAULT_CATEGORIES.includes(n));
+        setCustomCategories(names);
+      }
+    })();
+  }, [open]);
+
+  const handleCategoryChange = async (value: string) => {
+    if (value === "__add_new__") {
+      const name = window.prompt("Enter new category name:")?.trim();
+      if (!name) return;
+      const all = [...DEFAULT_CATEGORIES, ...customCategories];
+      if (all.some((c) => c.toLowerCase() === name.toLowerCase())) {
+        toast({ variant: "destructive", title: "Category exists", description: `"${name}" already exists.` });
+        return;
+      }
+      const { error } = await supabase
+        .from("book_categories")
+        .insert({ name, organization_id: organizationId });
+      if (error) {
+        toast({ variant: "destructive", title: "Error", description: error.message });
+        return;
+      }
+      setCustomCategories((prev) => [...prev, name]);
+      setCategory(name);
+      toast({ title: "Category added", description: `"${name}" is now available.` });
+      return;
+    }
+    setCategory(value);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -194,19 +231,20 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-category">Category</Label>
-            <Select value={category} onValueChange={setCategory} required>
+            <Select value={category} onValueChange={handleCategoryChange} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Fiction">Fiction</SelectItem>
-                <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
-                <SelectItem value="Science">Science</SelectItem>
-                <SelectItem value="History">History</SelectItem>
-                <SelectItem value="Biography">Biography</SelectItem>
-                <SelectItem value="Technology">Technology</SelectItem>
-                <SelectItem value="Textbooks">Textbooks</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                {DEFAULT_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                {customCategories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                <SelectItem value="__add_new__" className="text-primary font-medium">
+                  + Add new category…
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
