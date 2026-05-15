@@ -79,7 +79,55 @@ export function ScanIssueBookDialog({
   const [bookLoading, setBookLoading] = useState(true);
   const [bookError, setBookError] = useState<string | null>(null);
   const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [externalLookup, setExternalLookup] = useState<{
+    title: string;
+    author: string;
+    cover?: string;
+  } | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const { toast } = useToast();
+
+  const lookupExternalIsbn = async (isbnToSearch: string) => {
+    setLookupLoading(true);
+    setExternalLookup(null);
+    try {
+      // Try Open Library first
+      const olRes = await fetch(
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(isbnToSearch)}&format=json&jscmd=data`
+      );
+      if (olRes.ok) {
+        const olData = await olRes.json();
+        const info = olData[`ISBN:${isbnToSearch}`];
+        if (info?.title) {
+          setExternalLookup({
+            title: info.title,
+            author: info.authors?.map((a: { name: string }) => a.name).join(", ") || "Unknown",
+            cover: (info.cover?.large || info.cover?.medium || info.cover?.small)?.replace("http://", "https://"),
+          });
+          return;
+        }
+      }
+      // Fallback to Google Books
+      const gRes = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbnToSearch)}`
+      );
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        const info = gData.items?.[0]?.volumeInfo;
+        if (info?.title) {
+          setExternalLookup({
+            title: info.title,
+            author: info.authors?.join(", ") || "Unknown",
+            cover: (info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail)?.replace("http://", "https://"),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("External ISBN lookup failed:", err);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open && scanValue) {
