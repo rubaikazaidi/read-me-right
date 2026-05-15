@@ -79,7 +79,55 @@ export function ScanIssueBookDialog({
   const [bookLoading, setBookLoading] = useState(true);
   const [bookError, setBookError] = useState<string | null>(null);
   const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [externalLookup, setExternalLookup] = useState<{
+    title: string;
+    author: string;
+    cover?: string;
+  } | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const { toast } = useToast();
+
+  const lookupExternalIsbn = async (isbnToSearch: string) => {
+    setLookupLoading(true);
+    setExternalLookup(null);
+    try {
+      // Try Open Library first
+      const olRes = await fetch(
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(isbnToSearch)}&format=json&jscmd=data`
+      );
+      if (olRes.ok) {
+        const olData = await olRes.json();
+        const info = olData[`ISBN:${isbnToSearch}`];
+        if (info?.title) {
+          setExternalLookup({
+            title: info.title,
+            author: info.authors?.map((a: { name: string }) => a.name).join(", ") || "Unknown",
+            cover: (info.cover?.large || info.cover?.medium || info.cover?.small)?.replace("http://", "https://"),
+          });
+          return;
+        }
+      }
+      // Fallback to Google Books
+      const gRes = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbnToSearch)}`
+      );
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        const info = gData.items?.[0]?.volumeInfo;
+        if (info?.title) {
+          setExternalLookup({
+            title: info.title,
+            author: info.authors?.join(", ") || "Unknown",
+            cover: (info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail)?.replace("http://", "https://"),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("External ISBN lookup failed:", err);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open && scanValue) {
@@ -90,6 +138,7 @@ export function ScanIssueBookDialog({
       setBookError(null);
       setBorrowerInfo(null);
       setAllCopies([]);
+      setExternalLookup(null);
     }
   }, [open, scanValue, scanType]);
 
@@ -131,6 +180,8 @@ export function ScanIssueBookDialog({
         if (!data || data.length === 0) {
           setBookError(`No book found with ISBN: ${scanValue}`);
           setBookInfo(null);
+          // Try to fetch details from external sources so the librarian can preview before adding
+          lookupExternalIsbn(scanValue);
           return;
         }
 
@@ -469,12 +520,37 @@ export function ScanIssueBookDialog({
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Book not found</p>
+                  <p className="font-medium">Not in your library</p>
                   {bookError && <p className="text-sm">{bookError}</p>}
                 </div>
               </div>
+
+              {lookupLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="h-3 w-3 rounded-full border-2 border-muted-foreground/40 border-t-transparent animate-spin" />
+                  Looking up book details online…
+                </div>
+              )}
+
+              {externalLookup && (
+                <div className="flex gap-3 p-3 bg-background rounded-md border">
+                  {externalLookup.cover && (
+                    <img
+                      src={externalLookup.cover}
+                      alt={externalLookup.title}
+                      className="w-14 h-20 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Found online:</p>
+                    <p className="font-semibold truncate">{externalLookup.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">by {externalLookup.author}</p>
+                  </div>
+                </div>
+              )}
+
               {scanType === "isbn" && onAddBook && (
-                <Button 
+                <Button
                   onClick={() => {
                     onAddBook(scanValue);
                     onOpenChange(false);
@@ -483,7 +559,7 @@ export function ScanIssueBookDialog({
                   variant="default"
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Add This Book to Library
+                  {externalLookup ? `Add "${externalLookup.title}" to Library` : "Add This Book to Library"}
                 </Button>
               )}
             </div>
