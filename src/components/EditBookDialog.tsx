@@ -134,6 +134,12 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
         finalCoverUrl = null;
       }
 
+      const deweyDefaults: Record<string, string> = {
+        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
+        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
+      };
+      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+
       const { error } = await supabase
         .from("books")
         .update({
@@ -143,7 +149,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           category,
           cover_image_url: finalCoverUrl,
           age_rating: ageRating || null,
-        })
+          dewey_decimal: finalDewey,
+        } as any)
         .eq("id", book.id);
 
       if (error) throw error;
