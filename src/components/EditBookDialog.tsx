@@ -70,6 +70,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setIsbn(book.isbn);
     setCategory(book.category);
     setAgeRating((book as any).age_rating || "");
+    setDeweyDecimal((book as any).dewey_decimal || "");
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
