@@ -124,6 +124,9 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
               <p className="text-muted-foreground">by {book.author}</p>
               <p className="text-sm text-muted-foreground mt-1">ISBN: {book.isbn}</p>
               <p className="text-sm text-muted-foreground">Category: {book.category}</p>
+              <p className="text-sm text-muted-foreground">
+                Dewey Decimal: <span className="font-mono font-medium text-foreground">{book.dewey_decimal || "—"}</span>
+              </p>
               <Badge className={`mt-2 ${statusStyle.className}`}>{statusStyle.label}</Badge>
             </div>
           </div>
