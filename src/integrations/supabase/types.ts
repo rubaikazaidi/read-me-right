@@ -125,6 +125,7 @@ export type Database = {
           copy_number: number
           cover_image_url: string | null
           created_at: string | null
+          dewey_decimal: string | null
           due_date: string | null
           id: string
           isbn: string
@@ -141,6 +142,7 @@ export type Database = {
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
+          dewey_decimal?: string | null
           due_date?: string | null
           id?: string
           isbn: string
@@ -157,6 +159,7 @@ export type Database = {
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
+          dewey_decimal?: string | null
           due_date?: string | null
           id?: string
           isbn?: string
