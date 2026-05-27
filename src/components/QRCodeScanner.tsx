@@ -90,15 +90,34 @@ export function QRCodeScanner({
       // Prefer back camera on mobile devices
       const cameraId = cameras.find(c => c.label.toLowerCase().includes("back"))?.id || cameras[0].id;
 
+      // Dynamically size scan box to viewport for higher-res capture
+      const viewportW = Math.min(window.innerWidth, 640);
+      const boxW = Math.max(240, Math.floor(viewportW * 0.8));
+      const boxH = Math.floor(boxW * 0.55);
+
       await html5QrCode.start(
-        cameraId,
+        { facingMode: { ideal: "environment" } } as any,
         {
-          fps: 10,
-          qrbox: { width: 280, height: 180 }, // Wider box for barcodes
-          aspectRatio: 1.5,
-        },
+          fps: 30,
+          qrbox: { width: boxW, height: boxH },
+          aspectRatio: 1.7777,
+          disableFlip: true,
+          videoConstraints: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 },
+            advanced: [
+              { focusMode: "continuous" },
+              { exposureMode: "continuous" },
+              { whiteBalanceMode: "continuous" },
+            ],
+          } as any,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true,
+          },
+        } as any,
         (decodedText, decodedResult) => {
-          // Determine if it's a QR code or barcode
           const format = decodedResult.result.format?.formatName;
           handleCodeScanned(decodedText, format);
         },
