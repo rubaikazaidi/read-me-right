@@ -173,11 +173,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
         finalCoverUrl = null;
       }
 
-      const deweyDefaults: Record<string, string> = {
-        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
-        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
-      };
-      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+      const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase
         .from("books")
