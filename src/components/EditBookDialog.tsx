@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Book } from "@/types/book";
+import { getDeweyForCategory } from "@/lib/dewey";
 
 interface EditBookDialogProps {
   book: Book;
