@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDeweyForCategory } from "@/lib/dewey";
 
 interface AddBookDialogProps {
   onBookAdded: () => void;
@@ -208,13 +209,7 @@ export function AddBookDialog({
       return;
     }
     setCategory(value);
-    const deweyDefaults: Record<string, string> = {
-      Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
-      Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
-    };
-    if (deweyDefaults[value]) {
-      setDeweyDecimal(deweyDefaults[value]);
-    }
+    setDeweyDecimal((prev) => prev.trim() ? prev : getDeweyForCategory(value));
   };
 
 
@@ -296,11 +291,7 @@ export function AddBookDialog({
         finalCoverUrl = publicUrl;
       }
 
-      const deweyDefaults: Record<string, string> = {
-        Fiction: "813", "Non-Fiction": "081", Science: "500", History: "900",
-        Biography: "920", Technology: "600", Textbooks: "370", Other: "000",
-      };
-      const finalDewey = deweyDecimal.trim() || deweyDefaults[category] || "000";
+      const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase.from("books").insert({
         title,
