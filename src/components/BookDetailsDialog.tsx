@@ -89,6 +89,44 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
         .order("queue_position", { ascending: true, nullsFirst: false });
 
       setQueueRequests(requestsData as QueueRequest[] || []);
+
+      // Fetch all copies of this book (grouped by ISBN within the same org)
+      if (book.isbn) {
+        const { data: copyData } = await supabase
+          .from("books")
+          .select("id, copy_number, status, due_date, borrowed_by")
+          .eq("isbn", book.isbn)
+          .order("copy_number", { ascending: true });
+
+        if (copyData && copyData.length > 1) {
+          const borrowerIds = copyData
+            .map((c) => c.borrowed_by)
+            .filter((v): v is string => !!v);
+          let borrowerMap: Record<string, string> = {};
+          if (borrowerIds.length > 0) {
+            const { data: profs } = await supabase
+              .from("profiles")
+              .select("id, full_name")
+              .in("id", borrowerIds);
+            borrowerMap = Object.fromEntries(
+              (profs || []).map((p) => [p.id, p.full_name])
+            );
+          }
+          setCopies(
+            copyData.map((c) => ({
+              id: c.id,
+              copy_number: c.copy_number,
+              status: c.status as CopyInfo["status"],
+              due_date: c.due_date,
+              borrower_name: c.borrowed_by ? borrowerMap[c.borrowed_by] ?? null : null,
+            }))
+          );
+        } else {
+          setCopies([]);
+        }
+      } else {
+        setCopies([]);
+      }
     } catch (error) {
       console.error("Error fetching book details:", error);
     } finally {
