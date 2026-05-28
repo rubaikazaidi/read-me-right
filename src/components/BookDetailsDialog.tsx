@@ -36,9 +36,18 @@ interface QueueRequest {
   };
 }
 
+interface CopyInfo {
+  id: string;
+  copy_number: number;
+  status: "available" | "borrowed" | "late";
+  due_date: string | null;
+  borrower_name: string | null;
+}
+
 export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialogProps) {
   const [borrower, setBorrower] = useState<BorrowerProfile | null>(null);
   const [queueRequests, setQueueRequests] = useState<QueueRequest[]>([]);
+  const [copies, setCopies] = useState<CopyInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -80,6 +89,44 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
         .order("queue_position", { ascending: true, nullsFirst: false });
 
       setQueueRequests(requestsData as QueueRequest[] || []);
+
+      // Fetch all copies of this book (grouped by ISBN within the same org)
+      if (book.isbn) {
+        const { data: copyData } = await supabase
+          .from("books")
+          .select("id, copy_number, status, due_date, borrowed_by")
+          .eq("isbn", book.isbn)
+          .order("copy_number", { ascending: true });
+
+        if (copyData && copyData.length > 1) {
+          const borrowerIds = copyData
+            .map((c) => c.borrowed_by)
+            .filter((v): v is string => !!v);
+          let borrowerMap: Record<string, string> = {};
+          if (borrowerIds.length > 0) {
+            const { data: profs } = await supabase
+              .from("profiles")
+              .select("id, full_name")
+              .in("id", borrowerIds);
+            borrowerMap = Object.fromEntries(
+              (profs || []).map((p) => [p.id, p.full_name])
+            );
+          }
+          setCopies(
+            copyData.map((c) => ({
+              id: c.id,
+              copy_number: c.copy_number,
+              status: c.status as CopyInfo["status"],
+              due_date: c.due_date,
+              borrower_name: c.borrowed_by ? borrowerMap[c.borrowed_by] ?? null : null,
+            }))
+          );
+        } else {
+          setCopies([]);
+        }
+      } else {
+        setCopies([]);
+      }
     } catch (error) {
       console.error("Error fetching book details:", error);
     } finally {
@@ -181,7 +228,43 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
             </div>
           )}
 
+          {/* Per-copy statuses */}
+          {copies.length > 1 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                All Copies ({copies.length})
+              </h4>
+              <div className="space-y-2 max-h-56 overflow-y-auto">
+                {copies.map((c) => {
+                  const s = statusConfig[c.status];
+                  return (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs font-mono">
+                          Copy #{c.copy_number}
+                        </Badge>
+                        {c.borrower_name && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {c.borrower_name}
+                          </span>
+                        )}
+                        {c.due_date && (c.status === "borrowed" || c.status === "late") && (
+                          <span className="text-xs text-muted-foreground">
+                            Due {new Date(c.due_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Queue Requests */}
+
           {queueRequests.length > 0 && (
             <div className="space-y-3">
               <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
