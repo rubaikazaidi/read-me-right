@@ -228,7 +228,43 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
             </div>
           )}
 
+          {/* Per-copy statuses */}
+          {copies.length > 1 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                All Copies ({copies.length})
+              </h4>
+              <div className="space-y-2 max-h-56 overflow-y-auto">
+                {copies.map((c) => {
+                  const s = statusConfig[c.status];
+                  return (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs font-mono">
+                          Copy #{c.copy_number}
+                        </Badge>
+                        {c.borrower_name && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {c.borrower_name}
+                          </span>
+                        )}
+                        {c.due_date && (c.status === "borrowed" || c.status === "late") && (
+                          <span className="text-xs text-muted-foreground">
+                            Due {new Date(c.due_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Queue Requests */}
+
           {queueRequests.length > 0 && (
             <div className="space-y-3">
               <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
