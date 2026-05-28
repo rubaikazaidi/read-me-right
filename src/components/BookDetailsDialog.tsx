@@ -36,9 +36,18 @@ interface QueueRequest {
   };
 }
 
+interface CopyInfo {
+  id: string;
+  copy_number: number;
+  status: "available" | "borrowed" | "late";
+  due_date: string | null;
+  borrower_name: string | null;
+}
+
 export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialogProps) {
   const [borrower, setBorrower] = useState<BorrowerProfile | null>(null);
   const [queueRequests, setQueueRequests] = useState<QueueRequest[]>([]);
+  const [copies, setCopies] = useState<CopyInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
