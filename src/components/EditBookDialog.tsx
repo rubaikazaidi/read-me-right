@@ -83,6 +83,9 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
+    setSummary((book as any).summary || "");
+    setBackCoverUrl((book as any).back_cover_image_url || "");
+    setBackCoverFile(null);
   }, [book]);
 
   useEffect(() => {
