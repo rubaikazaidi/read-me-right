@@ -33,10 +33,15 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [summary, setSummary] = useState((book as any).summary || "");
+  const [backCoverUrl, setBackCoverUrl] = useState((book as any).back_cover_image_url || "");
+  const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const backCoverFileInputRef = useRef<HTMLInputElement>(null);
+  const backCoverCameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
