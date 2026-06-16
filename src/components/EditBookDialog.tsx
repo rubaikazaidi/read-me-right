@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Upload, Camera, Link as LinkIcon, X, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,10 +33,15 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [coverUrl, setCoverUrl] = useState(book.cover_image_url || "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [summary, setSummary] = useState((book as any).summary || "");
+  const [backCoverUrl, setBackCoverUrl] = useState((book as any).back_cover_image_url || "");
+  const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const backCoverFileInputRef = useRef<HTMLInputElement>(null);
+  const backCoverCameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
@@ -77,6 +83,9 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setCoverUrl(book.cover_image_url || "");
     setCoverFile(null);
     setCoverPreview(null);
+    setSummary((book as any).summary || "");
+    setBackCoverUrl((book as any).back_cover_image_url || "");
+    setBackCoverFile(null);
   }, [book]);
 
   useEffect(() => {
@@ -173,6 +182,24 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
         finalCoverUrl = null;
       }
 
+      // Upload new back cover if provided
+      let finalBackCoverUrl: string | null = backCoverUrl || null;
+      if (backCoverFile && organizationId) {
+        if (backCoverFile.size > 5 * 1024 * 1024) {
+          toast({ variant: "destructive", title: "File too large", description: "Back cover must be smaller than 5MB." });
+          setLoading(false);
+          return;
+        }
+        const ext = backCoverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const safeExt = allowed.includes(ext) ? ext : 'jpg';
+        const filePath = `${organizationId}/${crypto.randomUUID()}-back.${safeExt}`;
+        const { error: upErr } = await supabase.storage.from('book-covers').upload(filePath, backCoverFile);
+        if (upErr) throw upErr;
+        const { data: { publicUrl } } = supabase.storage.from('book-covers').getPublicUrl(filePath);
+        finalBackCoverUrl = publicUrl;
+      }
+
       const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase
@@ -185,6 +212,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           cover_image_url: finalCoverUrl,
           age_rating: ageRating || null,
           dewey_decimal: finalDewey,
+          summary: summary.trim() || null,
+          back_cover_image_url: finalBackCoverUrl,
         } as any)
         .eq("id", book.id);
 
@@ -325,6 +354,64 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               </TabsContent>
             </Tabs>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-summary">Book Summary</Label>
+            <Textarea
+              id="edit-summary"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Short summary or description"
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Back Cover Photo</Label>
+            {(backCoverFile || backCoverUrl) && (
+              <div className="relative w-24 h-32 mb-2">
+                <img
+                  src={backCoverFile ? URL.createObjectURL(backCoverFile) : backCoverUrl}
+                  alt="Back cover"
+                  className="w-full h-full object-cover rounded-md border border-border"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={() => { setBackCoverFile(null); setBackCoverUrl(""); }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            <input
+              ref={backCoverFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
+            />
+            <input
+              ref={backCoverCameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-2" />Take Photo
+              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />Upload
+              </Button>
+            </div>
+          </div>
+
+
 
           <div className="flex gap-2">
             <AlertDialog>

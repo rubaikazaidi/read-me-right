@@ -119,6 +119,7 @@ export type Database = {
         Row: {
           age_rating: string | null
           author: string
+          back_cover_image_url: string | null
           borrowed_at: string | null
           borrowed_by: string | null
           category: string
@@ -131,11 +132,13 @@ export type Database = {
           isbn: string
           organization_id: string | null
           status: string
+          summary: string | null
           title: string
         }
         Insert: {
           age_rating?: string | null
           author: string
+          back_cover_image_url?: string | null
           borrowed_at?: string | null
           borrowed_by?: string | null
           category: string
@@ -148,11 +151,13 @@ export type Database = {
           isbn: string
           organization_id?: string | null
           status?: string
+          summary?: string | null
           title: string
         }
         Update: {
           age_rating?: string | null
           author?: string
+          back_cover_image_url?: string | null
           borrowed_at?: string | null
           borrowed_by?: string | null
           category?: string
@@ -165,6 +170,7 @@ export type Database = {
           isbn?: string
           organization_id?: string | null
           status?: string
+          summary?: string | null
           title?: string
         }
         Relationships: [

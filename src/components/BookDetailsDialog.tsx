@@ -178,6 +178,31 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
             </div>
           </div>
 
+          {/* Summary */}
+          {(book.summary || book.back_cover_image_url) && (
+            <div className="space-y-3 p-4 bg-muted/40 rounded-lg">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                About this book
+              </h4>
+              {book.summary && (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{book.summary}</p>
+              )}
+              {book.back_cover_image_url && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Back cover</p>
+                  <a href={book.back_cover_image_url} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={book.back_cover_image_url}
+                      alt={`Back cover of ${book.title}`}
+                      className="max-h-72 w-auto rounded-md border border-border object-contain hover:opacity-90 transition"
+                    />
+                  </a>
+                  <p className="text-xs text-muted-foreground mt-1">Tap to view full size</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Borrower Details */}
           {(book.status === "borrowed" || book.status === "late") && borrower && (
             <div className="p-4 bg-muted/50 rounded-lg space-y-3">

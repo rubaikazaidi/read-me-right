@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { getDeweyForCategory } from "@/lib/dewey";
 
 interface AddBookDialogProps {
@@ -35,10 +36,14 @@ export function AddBookDialog({
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [ageRating, setAgeRating] = useState("");
   const [deweyDecimal, setDeweyDecimal] = useState("");
+  const [summary, setSummary] = useState("");
+  const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const backCoverFileInputRef = useRef<HTMLInputElement>(null);
+  const backCoverCameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
@@ -84,6 +89,12 @@ export function AddBookDialog({
             else if (subjectName.includes("technology") || subjectName.includes("computer")) setCategory("Technology");
             else if (subjectName.includes("education") || subjectName.includes("textbook")) setCategory("Textbooks");
             else setCategory("Other");
+          }
+
+          // Pull summary if available
+          const olSummary = bookInfo.excerpts?.[0]?.text || bookInfo.notes || "";
+          if (olSummary && typeof olSummary === "string") {
+            setSummary(olSummary);
           }
           
           toast({
@@ -131,6 +142,10 @@ export function AddBookDialog({
             else if (bookCategory.includes("technology") || bookCategory.includes("computer")) setCategory("Technology");
             else if (bookCategory.includes("education") || bookCategory.includes("textbook")) setCategory("Textbooks");
             else setCategory("Other");
+          }
+
+          if (bookInfo.description) {
+            setSummary(bookInfo.description);
           }
           
           toast({
@@ -291,6 +306,29 @@ export function AddBookDialog({
         finalCoverUrl = publicUrl;
       }
 
+      // Upload back cover image if provided
+      let finalBackCoverUrl: string | null = null;
+      if (backCoverFile) {
+        if (!backCoverFile.type.startsWith('image/')) {
+          toast({ variant: "destructive", title: "Invalid file type", description: "Back cover must be an image." });
+          setLoading(false);
+          return;
+        }
+        if (backCoverFile.size > 5 * 1024 * 1024) {
+          toast({ variant: "destructive", title: "File too large", description: "Back cover image must be smaller than 5MB." });
+          setLoading(false);
+          return;
+        }
+        const ext = backCoverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const safeExt = allowed.includes(ext) ? ext : 'jpg';
+        const filePath = `${organizationId}/${crypto.randomUUID()}-back.${safeExt}`;
+        const { error: upErr } = await supabase.storage.from('book-covers').upload(filePath, backCoverFile);
+        if (upErr) throw upErr;
+        const { data: { publicUrl } } = supabase.storage.from('book-covers').getPublicUrl(filePath);
+        finalBackCoverUrl = publicUrl;
+      }
+
       const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase.from("books").insert({
@@ -304,6 +342,8 @@ export function AddBookDialog({
         copy_number: copyNumber,
         age_rating: ageRating || null,
         dewey_decimal: finalDewey,
+        summary: summary.trim() || null,
+        back_cover_image_url: finalBackCoverUrl,
       } as any);
 
       if (error) throw error;
@@ -323,6 +363,8 @@ export function AddBookDialog({
       setCoverFile(null);
       setAgeRating("");
       setDeweyDecimal("");
+      setSummary("");
+      setBackCoverFile(null);
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
@@ -346,7 +388,7 @@ export function AddBookDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Book</DialogTitle>
         </DialogHeader>
@@ -480,6 +522,62 @@ export function AddBookDialog({
               </TabsContent>
             </Tabs>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="summary">Book Summary</Label>
+            <Textarea
+              id="summary"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Short summary or description (auto-filled when found)"
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Back Cover Photo</Label>
+            <p className="text-xs text-muted-foreground">
+              Take or upload a photo of the back of the book so students can read the printed summary.
+            </p>
+            {backCoverFile && (
+              <img
+                src={URL.createObjectURL(backCoverFile)}
+                alt="Back cover preview"
+                className="w-24 h-32 object-cover rounded-md border border-border"
+              />
+            )}
+            <input
+              ref={backCoverFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
+            />
+            <input
+              ref={backCoverCameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+                <Camera className="w-4 h-4 mr-2" />
+                Take Photo
+              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload
+              </Button>
+              {backCoverFile && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setBackCoverFile(null)}>
+                  ✕
+                </Button>
+              )}
+            </div>
+          </div>
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Adding..." : "Add Book"}
           </Button>
