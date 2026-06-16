@@ -36,10 +36,14 @@ export function AddBookDialog({
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [ageRating, setAgeRating] = useState("");
   const [deweyDecimal, setDeweyDecimal] = useState("");
+  const [summary, setSummary] = useState("");
+  const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const backCoverFileInputRef = useRef<HTMLInputElement>(null);
+  const backCoverCameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
