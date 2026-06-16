@@ -15,6 +15,8 @@ export interface Book {
   copy_number?: number;
   dewey_decimal?: string | null;
   age_rating?: string | null;
+  summary?: string | null;
+  back_cover_image_url?: string | null;
 }
 
 export interface GroupedBook extends Book {
