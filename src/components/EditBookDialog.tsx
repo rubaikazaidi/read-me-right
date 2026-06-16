@@ -182,6 +182,24 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
         finalCoverUrl = null;
       }
 
+      // Upload new back cover if provided
+      let finalBackCoverUrl: string | null = backCoverUrl || null;
+      if (backCoverFile && organizationId) {
+        if (backCoverFile.size > 5 * 1024 * 1024) {
+          toast({ variant: "destructive", title: "File too large", description: "Back cover must be smaller than 5MB." });
+          setLoading(false);
+          return;
+        }
+        const ext = backCoverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const safeExt = allowed.includes(ext) ? ext : 'jpg';
+        const filePath = `${organizationId}/${crypto.randomUUID()}-back.${safeExt}`;
+        const { error: upErr } = await supabase.storage.from('book-covers').upload(filePath, backCoverFile);
+        if (upErr) throw upErr;
+        const { data: { publicUrl } } = supabase.storage.from('book-covers').getPublicUrl(filePath);
+        finalBackCoverUrl = publicUrl;
+      }
+
       const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase
@@ -194,6 +212,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           cover_image_url: finalCoverUrl,
           age_rating: ageRating || null,
           dewey_decimal: finalDewey,
+          summary: summary.trim() || null,
+          back_cover_image_url: finalBackCoverUrl,
         } as any)
         .eq("id", book.id);
 
