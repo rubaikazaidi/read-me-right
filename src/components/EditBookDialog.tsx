@@ -355,6 +355,64 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
             </Tabs>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="edit-summary">Book Summary</Label>
+            <Textarea
+              id="edit-summary"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Short summary or description"
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Back Cover Photo</Label>
+            {(backCoverFile || backCoverUrl) && (
+              <div className="relative w-24 h-32 mb-2">
+                <img
+                  src={backCoverFile ? URL.createObjectURL(backCoverFile) : backCoverUrl}
+                  alt="Back cover"
+                  className="w-full h-full object-cover rounded-md border border-border"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={() => { setBackCoverFile(null); setBackCoverUrl(""); }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            <input
+              ref={backCoverFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
+            />
+            <input
+              ref={backCoverCameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-2" />Take Photo
+              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />Upload
+              </Button>
+            </div>
+          </div>
+
+
+
           <div className="flex gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
