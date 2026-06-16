@@ -143,6 +143,10 @@ export function AddBookDialog({
             else if (bookCategory.includes("education") || bookCategory.includes("textbook")) setCategory("Textbooks");
             else setCategory("Other");
           }
+
+          if (bookInfo.description) {
+            setSummary(bookInfo.description);
+          }
           
           toast({
             title: "Book info found!",
