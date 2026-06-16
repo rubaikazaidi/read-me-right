@@ -306,6 +306,29 @@ export function AddBookDialog({
         finalCoverUrl = publicUrl;
       }
 
+      // Upload back cover image if provided
+      let finalBackCoverUrl: string | null = null;
+      if (backCoverFile) {
+        if (!backCoverFile.type.startsWith('image/')) {
+          toast({ variant: "destructive", title: "Invalid file type", description: "Back cover must be an image." });
+          setLoading(false);
+          return;
+        }
+        if (backCoverFile.size > 5 * 1024 * 1024) {
+          toast({ variant: "destructive", title: "File too large", description: "Back cover image must be smaller than 5MB." });
+          setLoading(false);
+          return;
+        }
+        const ext = backCoverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const safeExt = allowed.includes(ext) ? ext : 'jpg';
+        const filePath = `${organizationId}/${crypto.randomUUID()}-back.${safeExt}`;
+        const { error: upErr } = await supabase.storage.from('book-covers').upload(filePath, backCoverFile);
+        if (upErr) throw upErr;
+        const { data: { publicUrl } } = supabase.storage.from('book-covers').getPublicUrl(filePath);
+        finalBackCoverUrl = publicUrl;
+      }
+
       const finalDewey = deweyDecimal.trim() || getDeweyForCategory(category);
 
       const { error } = await supabase.from("books").insert({
@@ -319,6 +342,8 @@ export function AddBookDialog({
         copy_number: copyNumber,
         age_rating: ageRating || null,
         dewey_decimal: finalDewey,
+        summary: summary.trim() || null,
+        back_cover_image_url: finalBackCoverUrl,
       } as any);
 
       if (error) throw error;
@@ -338,6 +363,8 @@ export function AddBookDialog({
       setCoverFile(null);
       setAgeRating("");
       setDeweyDecimal("");
+      setSummary("");
+      setBackCoverFile(null);
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
