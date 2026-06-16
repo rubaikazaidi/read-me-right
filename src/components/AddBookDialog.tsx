@@ -522,6 +522,62 @@ export function AddBookDialog({
               </TabsContent>
             </Tabs>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="summary">Book Summary</Label>
+            <Textarea
+              id="summary"
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Short summary or description (auto-filled when found)"
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Back Cover Photo</Label>
+            <p className="text-xs text-muted-foreground">
+              Take or upload a photo of the back of the book so students can read the printed summary.
+            </p>
+            {backCoverFile && (
+              <img
+                src={URL.createObjectURL(backCoverFile)}
+                alt="Back cover preview"
+                className="w-24 h-32 object-cover rounded-md border border-border"
+              />
+            )}
+            <input
+              ref={backCoverFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
+            />
+            <input
+              ref={backCoverCameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+                <Camera className="w-4 h-4 mr-2" />
+                Take Photo
+              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload
+              </Button>
+              {backCoverFile && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setBackCoverFile(null)}>
+                  ✕
+                </Button>
+              )}
+            </div>
+          </div>
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Adding..." : "Add Book"}
           </Button>
