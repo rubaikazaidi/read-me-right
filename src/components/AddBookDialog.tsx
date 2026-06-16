@@ -90,6 +90,12 @@ export function AddBookDialog({
             else if (subjectName.includes("education") || subjectName.includes("textbook")) setCategory("Textbooks");
             else setCategory("Other");
           }
+
+          // Pull summary if available
+          const olSummary = bookInfo.excerpts?.[0]?.text || bookInfo.notes || "";
+          if (olSummary && typeof olSummary === "string") {
+            setSummary(olSummary);
+          }
           
           toast({
             title: "Book info found!",
