@@ -92,7 +92,13 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setSummary((book as any).summary || "");
     setBackCoverUrl((book as any).back_cover_image_url || "");
     setBackCoverFile(null);
+    setClassificationNumber((book as any).classification_number || "");
+    setVendorBill((book as any).vendor_bill || "");
+    setPrice((book as any).price != null ? String((book as any).price) : "");
+    setPageCount((book as any).page_count != null ? String((book as any).page_count) : "");
+    setPublisher((book as any).publisher || "");
   }, [book]);
+
 
   useEffect(() => {
     if (!open) return;
