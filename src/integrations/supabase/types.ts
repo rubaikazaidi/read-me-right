@@ -123,6 +123,7 @@ export type Database = {
           borrowed_at: string | null
           borrowed_by: string | null
           category: string
+          classification_number: string | null
           copy_number: number
           cover_image_url: string | null
           created_at: string | null
@@ -131,9 +132,13 @@ export type Database = {
           id: string
           isbn: string
           organization_id: string | null
+          page_count: number | null
+          price: number | null
+          publisher: string | null
           status: string
           summary: string | null
           title: string
+          vendor_bill: string | null
         }
         Insert: {
           age_rating?: string | null
@@ -142,6 +147,7 @@ export type Database = {
           borrowed_at?: string | null
           borrowed_by?: string | null
           category: string
+          classification_number?: string | null
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
@@ -150,9 +156,13 @@ export type Database = {
           id?: string
           isbn: string
           organization_id?: string | null
+          page_count?: number | null
+          price?: number | null
+          publisher?: string | null
           status?: string
           summary?: string | null
           title: string
+          vendor_bill?: string | null
         }
         Update: {
           age_rating?: string | null
@@ -161,6 +171,7 @@ export type Database = {
           borrowed_at?: string | null
           borrowed_by?: string | null
           category?: string
+          classification_number?: string | null
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
@@ -169,9 +180,13 @@ export type Database = {
           id?: string
           isbn?: string
           organization_id?: string | null
+          page_count?: number | null
+          price?: number | null
+          publisher?: string | null
           status?: string
           summary?: string | null
           title?: string
+          vendor_bill?: string | null
         }
         Relationships: [
           {
