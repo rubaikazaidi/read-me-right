@@ -226,6 +226,12 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           dewey_decimal: finalDewey,
           summary: summary.trim() || null,
           back_cover_image_url: finalBackCoverUrl,
+          classification_number: classificationNumber.trim() || null,
+          vendor_bill: vendorBill.trim() || null,
+          price: price.trim() ? Number(price) : null,
+          page_count: pageCount.trim() ? parseInt(pageCount, 10) : null,
+          publisher: publisher.trim() || null,
+
         } as any)
         .eq("id", book.id);
 
