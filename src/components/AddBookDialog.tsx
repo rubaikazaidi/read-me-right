@@ -562,6 +562,9 @@ export function AddBookDialog({
               onChange={(e) => setVendorBill(e.target.value)}
               placeholder="Bill / invoice number or vendor reference"
             />
+          </div>
+
+
 
           <div className="space-y-2">
             <Label>Book Cover</Label>
