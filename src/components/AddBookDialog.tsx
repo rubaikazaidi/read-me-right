@@ -102,11 +102,19 @@ export function AddBookDialog({
           if (olSummary && typeof olSummary === "string") {
             setSummary(olSummary);
           }
-          
+
+          if (bookInfo.publishers?.length > 0 && bookInfo.publishers[0]?.name) {
+            setPublisher(bookInfo.publishers[0].name);
+          }
+          if (bookInfo.number_of_pages) {
+            setPageCount(String(bookInfo.number_of_pages));
+          }
+
           toast({
             title: "Book info found!",
             description: `Auto-filled details for "${bookInfo.title}"`,
           });
+
           setFetchingBookInfo(false);
           return;
         }
