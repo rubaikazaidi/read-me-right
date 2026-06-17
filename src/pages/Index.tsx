@@ -404,7 +404,56 @@ const Index = () => {
             )}
           </div>
 
-          {userRole === "librarian" ? (
+          {searchTerm.trim() ? (
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Search results for "{searchTerm}"
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    ({filteredBooks.length} {filteredBooks.length === 1 ? "result" : "results"})
+                  </span>
+                </h2>
+                <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")}>
+                  Clear
+                </Button>
+              </div>
+              {filteredBooks.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No books found matching "{searchTerm}"</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {filteredBooks.map((book) => {
+                    const grouped = book as GroupedBook;
+                    const isLibrarian = userRole === "librarian";
+                    const isBorrowedByMe = !isLibrarian && grouped.allCopyIds?.some(
+                      (copyId) => books.find((b) => b.id === copyId)?.borrowed_by === user?.id
+                    );
+                    const userRequest = !isLibrarian
+                      ? grouped.allCopyIds?.reduce<{ status: string; queue_position: number | null } | null>(
+                          (found, copyId) => found || userRequests[copyId] || null,
+                          null
+                        )
+                      : null;
+                    return (
+                      <BookCard
+                        key={book.id}
+                        book={book}
+                        isLibrarian={isLibrarian}
+                        onRequestBook={isLibrarian || isBorrowedByMe ? undefined : handleRequestBook}
+                        onLeaveQueue={isLibrarian ? undefined : handleLeaveQueue}
+                        onEdit={isLibrarian ? () => setEditingBook(book) : undefined}
+                        onViewDetails={isLibrarian ? () => setViewingBook(book) : undefined}
+                        userRequest={isBorrowedByMe ? { status: "approved", queue_position: null } : userRequest}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+
             <Tabs defaultValue="books" className="w-full">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <TabsList className="grid w-full sm:w-auto grid-cols-2 max-w-md">
