@@ -452,9 +452,9 @@ const Index = () => {
                 </div>
               )}
             </div>
-          ) : (
-
+          ) : userRole === "librarian" ? (
             <Tabs defaultValue="books" className="w-full">
+
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <TabsList className="grid w-full sm:w-auto grid-cols-2 max-w-md">
                   <TabsTrigger value="books">Books</TabsTrigger>
