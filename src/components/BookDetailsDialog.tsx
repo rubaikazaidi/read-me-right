@@ -203,6 +203,34 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
             </div>
           )}
 
+          {/* Cataloging details */}
+          {(book.classification_number || book.publisher || book.page_count != null || book.price != null || book.vendor_bill) && (
+            <div className="p-4 bg-muted/40 rounded-lg space-y-2">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                Cataloging Details
+              </h4>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {book.classification_number && (
+                  <p><span className="text-muted-foreground">Classification:</span> <span className="font-medium">{book.classification_number}</span></p>
+                )}
+                {book.publisher && (
+                  <p><span className="text-muted-foreground">Publisher:</span> <span className="font-medium">{book.publisher}</span></p>
+                )}
+                {book.page_count != null && (
+                  <p><span className="text-muted-foreground">Pages:</span> <span className="font-medium">{book.page_count}</span></p>
+                )}
+                {book.price != null && (
+                  <p><span className="text-muted-foreground">Price:</span> <span className="font-medium">₹{Number(book.price).toFixed(2)}</span></p>
+                )}
+                {book.vendor_bill && (
+                  <p className="col-span-2"><span className="text-muted-foreground">Vendor Bill:</span> <span className="font-medium">{book.vendor_bill}</span></p>
+                )}
+              </div>
+            </div>
+          )}
+
+
+
           {/* Borrower Details */}
           {(book.status === "borrowed" || book.status === "late") && borrower && (
             <div className="p-4 bg-muted/50 rounded-lg space-y-3">

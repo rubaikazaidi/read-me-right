@@ -36,7 +36,13 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [summary, setSummary] = useState((book as any).summary || "");
   const [backCoverUrl, setBackCoverUrl] = useState((book as any).back_cover_image_url || "");
   const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
+  const [classificationNumber, setClassificationNumber] = useState((book as any).classification_number || "");
+  const [vendorBill, setVendorBill] = useState((book as any).vendor_bill || "");
+  const [price, setPrice] = useState((book as any).price != null ? String((book as any).price) : "");
+  const [pageCount, setPageCount] = useState((book as any).page_count != null ? String((book as any).page_count) : "");
+  const [publisher, setPublisher] = useState((book as any).publisher || "");
   const [loading, setLoading] = useState(false);
+
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +92,13 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
     setSummary((book as any).summary || "");
     setBackCoverUrl((book as any).back_cover_image_url || "");
     setBackCoverFile(null);
+    setClassificationNumber((book as any).classification_number || "");
+    setVendorBill((book as any).vendor_bill || "");
+    setPrice((book as any).price != null ? String((book as any).price) : "");
+    setPageCount((book as any).page_count != null ? String((book as any).page_count) : "");
+    setPublisher((book as any).publisher || "");
   }, [book]);
+
 
   useEffect(() => {
     if (!open) return;
@@ -214,6 +226,12 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           dewey_decimal: finalDewey,
           summary: summary.trim() || null,
           back_cover_image_url: finalBackCoverUrl,
+          classification_number: classificationNumber.trim() || null,
+          vendor_bill: vendorBill.trim() || null,
+          price: price.trim() ? Number(price) : null,
+          page_count: pageCount.trim() ? parseInt(pageCount, 10) : null,
+          publisher: publisher.trim() || null,
+
         } as any)
         .eq("id", book.id);
 
@@ -301,6 +319,60 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               placeholder="e.g. 813.54"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-classification">Classification Number</Label>
+            <Input
+              id="edit-classification"
+              value={classificationNumber}
+              onChange={(e) => setClassificationNumber(e.target.value)}
+              placeholder="Library classification / accession number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-publisher">Publication Company</Label>
+            <Input
+              id="edit-publisher"
+              value={publisher}
+              onChange={(e) => setPublisher(e.target.value)}
+              placeholder="Publisher name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-pages">Page Numbers</Label>
+              <Input
+                id="edit-pages"
+                type="number"
+                min="0"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+                placeholder="e.g. 320"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-price">Price (₹)</Label>
+              <Input
+                id="edit-price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 450"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-vendor">Vendor's Bill</Label>
+            <Input
+              id="edit-vendor"
+              value={vendorBill}
+              onChange={(e) => setVendorBill(e.target.value)}
+              placeholder="Bill / invoice number or vendor reference"
+            />
+          </div>
+
+
 
           {/* Book Cover Section */}
           <div className="space-y-2">

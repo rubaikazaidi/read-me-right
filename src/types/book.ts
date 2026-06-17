@@ -17,7 +17,13 @@ export interface Book {
   age_rating?: string | null;
   summary?: string | null;
   back_cover_image_url?: string | null;
+  classification_number?: string | null;
+  vendor_bill?: string | null;
+  price?: number | null;
+  page_count?: number | null;
+  publisher?: string | null;
 }
+
 
 export interface GroupedBook extends Book {
   totalCopies: number;

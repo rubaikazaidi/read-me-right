@@ -38,7 +38,13 @@ export function AddBookDialog({
   const [deweyDecimal, setDeweyDecimal] = useState("");
   const [summary, setSummary] = useState("");
   const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
+  const [classificationNumber, setClassificationNumber] = useState("");
+  const [vendorBill, setVendorBill] = useState("");
+  const [price, setPrice] = useState("");
+  const [pageCount, setPageCount] = useState("");
+  const [publisher, setPublisher] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -96,11 +102,19 @@ export function AddBookDialog({
           if (olSummary && typeof olSummary === "string") {
             setSummary(olSummary);
           }
-          
+
+          if (bookInfo.publishers?.length > 0 && bookInfo.publishers[0]?.name) {
+            setPublisher(bookInfo.publishers[0].name);
+          }
+          if (bookInfo.number_of_pages) {
+            setPageCount(String(bookInfo.number_of_pages));
+          }
+
           toast({
             title: "Book info found!",
             description: `Auto-filled details for "${bookInfo.title}"`,
           });
+
           setFetchingBookInfo(false);
           return;
         }
@@ -147,6 +161,13 @@ export function AddBookDialog({
           if (bookInfo.description) {
             setSummary(bookInfo.description);
           }
+          if (bookInfo.publisher) {
+            setPublisher(bookInfo.publisher);
+          }
+          if (bookInfo.pageCount) {
+            setPageCount(String(bookInfo.pageCount));
+          }
+
           
           toast({
             title: "Book info found!",
@@ -344,6 +365,11 @@ export function AddBookDialog({
         dewey_decimal: finalDewey,
         summary: summary.trim() || null,
         back_cover_image_url: finalBackCoverUrl,
+        classification_number: classificationNumber.trim() || null,
+        vendor_bill: vendorBill.trim() || null,
+        price: price.trim() ? Number(price) : null,
+        page_count: pageCount.trim() ? parseInt(pageCount, 10) : null,
+        publisher: publisher.trim() || null,
       } as any);
 
       if (error) throw error;
@@ -365,6 +391,12 @@ export function AddBookDialog({
       setDeweyDecimal("");
       setSummary("");
       setBackCoverFile(null);
+      setClassificationNumber("");
+      setVendorBill("");
+      setPrice("");
+      setPageCount("");
+      setPublisher("");
+
       setOpen(false);
       onBookAdded();
     } catch (error: any) {
@@ -479,6 +511,61 @@ export function AddBookDialog({
               placeholder="e.g. 813.54 (auto-filled from category if blank)"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="classification">Classification Number</Label>
+            <Input
+              id="classification"
+              value={classificationNumber}
+              onChange={(e) => setClassificationNumber(e.target.value)}
+              placeholder="Library classification / accession number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="publisher">Publication Company</Label>
+            <Input
+              id="publisher"
+              value={publisher}
+              onChange={(e) => setPublisher(e.target.value)}
+              placeholder="Publisher name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="pages">Page Numbers</Label>
+              <Input
+                id="pages"
+                type="number"
+                min="0"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+                placeholder="e.g. 320"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Price (₹)</Label>
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 450"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="vendorBill">Vendor's Bill</Label>
+            <Input
+              id="vendorBill"
+              value={vendorBill}
+              onChange={(e) => setVendorBill(e.target.value)}
+              placeholder="Bill / invoice number or vendor reference"
+            />
+          </div>
+
+
+
           <div className="space-y-2">
             <Label>Book Cover</Label>
             <Tabs defaultValue="url" className="w-full">
