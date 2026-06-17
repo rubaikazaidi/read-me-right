@@ -512,6 +512,58 @@ export function AddBookDialog({
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="classification">Classification Number</Label>
+            <Input
+              id="classification"
+              value={classificationNumber}
+              onChange={(e) => setClassificationNumber(e.target.value)}
+              placeholder="Library classification / accession number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="publisher">Publication Company</Label>
+            <Input
+              id="publisher"
+              value={publisher}
+              onChange={(e) => setPublisher(e.target.value)}
+              placeholder="Publisher name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="pages">Page Numbers</Label>
+              <Input
+                id="pages"
+                type="number"
+                min="0"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+                placeholder="e.g. 320"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Price (₹)</Label>
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 450"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="vendorBill">Vendor's Bill</Label>
+            <Input
+              id="vendorBill"
+              value={vendorBill}
+              onChange={(e) => setVendorBill(e.target.value)}
+              placeholder="Bill / invoice number or vendor reference"
+            />
+
+          <div className="space-y-2">
             <Label>Book Cover</Label>
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
