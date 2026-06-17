@@ -563,8 +563,7 @@ const Index = () => {
               <CategoryTiles books={books} />
             </>
           )}
-            </>
-          )}
+
 
           </div>
         </main>
