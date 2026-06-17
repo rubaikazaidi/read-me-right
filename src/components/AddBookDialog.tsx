@@ -161,6 +161,13 @@ export function AddBookDialog({
           if (bookInfo.description) {
             setSummary(bookInfo.description);
           }
+          if (bookInfo.publisher) {
+            setPublisher(bookInfo.publisher);
+          }
+          if (bookInfo.pageCount) {
+            setPageCount(String(bookInfo.pageCount));
+          }
+
           
           toast({
             title: "Book info found!",
