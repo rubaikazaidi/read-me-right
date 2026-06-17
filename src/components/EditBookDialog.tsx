@@ -36,7 +36,13 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [summary, setSummary] = useState((book as any).summary || "");
   const [backCoverUrl, setBackCoverUrl] = useState((book as any).back_cover_image_url || "");
   const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
+  const [classificationNumber, setClassificationNumber] = useState((book as any).classification_number || "");
+  const [vendorBill, setVendorBill] = useState((book as any).vendor_bill || "");
+  const [price, setPrice] = useState((book as any).price != null ? String((book as any).price) : "");
+  const [pageCount, setPageCount] = useState((book as any).page_count != null ? String((book as any).page_count) : "");
+  const [publisher, setPublisher] = useState((book as any).publisher || "");
   const [loading, setLoading] = useState(false);
+
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
