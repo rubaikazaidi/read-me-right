@@ -319,6 +319,60 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               placeholder="e.g. 813.54"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-classification">Classification Number</Label>
+            <Input
+              id="edit-classification"
+              value={classificationNumber}
+              onChange={(e) => setClassificationNumber(e.target.value)}
+              placeholder="Library classification / accession number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-publisher">Publication Company</Label>
+            <Input
+              id="edit-publisher"
+              value={publisher}
+              onChange={(e) => setPublisher(e.target.value)}
+              placeholder="Publisher name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-pages">Page Numbers</Label>
+              <Input
+                id="edit-pages"
+                type="number"
+                min="0"
+                value={pageCount}
+                onChange={(e) => setPageCount(e.target.value)}
+                placeholder="e.g. 320"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-price">Price (₹)</Label>
+              <Input
+                id="edit-price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 450"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-vendor">Vendor's Bill</Label>
+            <Input
+              id="edit-vendor"
+              value={vendorBill}
+              onChange={(e) => setVendorBill(e.target.value)}
+              placeholder="Bill / invoice number or vendor reference"
+            />
+          </div>
+
+
 
           {/* Book Cover Section */}
           <div className="space-y-2">
