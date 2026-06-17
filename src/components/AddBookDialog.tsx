@@ -38,7 +38,13 @@ export function AddBookDialog({
   const [deweyDecimal, setDeweyDecimal] = useState("");
   const [summary, setSummary] = useState("");
   const [backCoverFile, setBackCoverFile] = useState<File | null>(null);
+  const [classificationNumber, setClassificationNumber] = useState("");
+  const [vendorBill, setVendorBill] = useState("");
+  const [price, setPrice] = useState("");
+  const [pageCount, setPageCount] = useState("");
+  const [publisher, setPublisher] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
