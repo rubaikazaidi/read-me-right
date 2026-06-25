@@ -569,14 +569,10 @@ export function AddBookDialog({
           <div className="space-y-2">
             <Label>Book Cover</Label>
             <Tabs defaultValue="url" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="url">
                   <LinkIcon className="w-4 h-4 mr-2" />
                   URL
-                </TabsTrigger>
-                <TabsTrigger value="upload">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload
                 </TabsTrigger>
                 <TabsTrigger value="camera">
                   <Camera className="w-4 h-4 mr-2" />
@@ -590,22 +586,26 @@ export function AddBookDialog({
                   onChange={(e) => setCoverUrl(e.target.value)}
                 />
               </TabsContent>
-              <TabsContent value="upload" className="space-y-2">
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
-                />
-              </TabsContent>
               <TabsContent value="camera" className="space-y-2">
-                <Input
+                {coverFile && (
+                  <img
+                    src={URL.createObjectURL(coverFile)}
+                    alt="Cover preview"
+                    className="w-24 h-32 object-cover rounded-md border border-border"
+                  />
+                )}
+                <input
                   ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  className="hidden"
                   onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
                 />
+                <Button type="button" variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                  <Camera className="w-4 h-4 mr-2" />
+                  {coverFile ? "Retake Photo" : "Take Photo"}
+                </Button>
               </TabsContent>
             </Tabs>
           </div>
@@ -624,7 +624,7 @@ export function AddBookDialog({
           <div className="space-y-2">
             <Label>Back Cover Photo</Label>
             <p className="text-xs text-muted-foreground">
-              Take or upload a photo of the back of the book so students can read the printed summary.
+              Take a photo of the back of the book so students can read the printed summary.
             </p>
             {backCoverFile && (
               <img
@@ -633,13 +633,6 @@ export function AddBookDialog({
                 className="w-24 h-32 object-cover rounded-md border border-border"
               />
             )}
-            <input
-              ref={backCoverFileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
-            />
             <input
               ref={backCoverCameraInputRef}
               type="file"
@@ -651,11 +644,7 @@ export function AddBookDialog({
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
                 <Camera className="w-4 h-4 mr-2" />
-                Take Photo
-              </Button>
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
+                {backCoverFile ? "Retake Photo" : "Take Photo"}
               </Button>
               {backCoverFile && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setBackCoverFile(null)}>
