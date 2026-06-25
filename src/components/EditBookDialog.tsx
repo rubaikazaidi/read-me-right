@@ -493,6 +493,18 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           </div>
         </form>
       </DialogContent>
+      <CameraCapture
+        open={coverCameraOpen}
+        onOpenChange={setCoverCameraOpen}
+        onCapture={(f) => { setCoverFile(f); setCoverPreview(URL.createObjectURL(f)); setCoverUrl(""); }}
+        title="Take Book Cover Photo"
+      />
+      <CameraCapture
+        open={backCoverCameraOpen}
+        onOpenChange={setBackCoverCameraOpen}
+        onCapture={(f) => { setBackCoverFile(f); setBackCoverUrl(""); }}
+        title="Take Back Cover Photo"
+      />
     </Dialog>
   );
 }
