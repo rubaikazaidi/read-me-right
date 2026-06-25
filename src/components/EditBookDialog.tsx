@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Book } from "@/types/book";
 import { getDeweyForCategory } from "@/lib/dewey";
+import { CameraCapture } from "@/components/CameraCapture";
 
 interface EditBookDialogProps {
   book: Book;
