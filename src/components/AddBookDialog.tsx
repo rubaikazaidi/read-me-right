@@ -45,6 +45,8 @@ export function AddBookDialog({
   const [pageCount, setPageCount] = useState("");
   const [publisher, setPublisher] = useState("");
   const [loading, setLoading] = useState(false);
+  const [coverCameraOpen, setCoverCameraOpen] = useState(false);
+  const [backCoverCameraOpen, setBackCoverCameraOpen] = useState(false);
 
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
