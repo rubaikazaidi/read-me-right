@@ -11,6 +11,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getDeweyForCategory } from "@/lib/dewey";
+import { CameraCapture } from "@/components/CameraCapture";
 
 interface AddBookDialogProps {
   onBookAdded: () => void;
@@ -44,6 +45,8 @@ export function AddBookDialog({
   const [pageCount, setPageCount] = useState("");
   const [publisher, setPublisher] = useState("");
   const [loading, setLoading] = useState(false);
+  const [coverCameraOpen, setCoverCameraOpen] = useState(false);
+  const [backCoverCameraOpen, setBackCoverCameraOpen] = useState(false);
 
   const [fetchingBookInfo, setFetchingBookInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -594,15 +597,7 @@ export function AddBookDialog({
                     className="w-24 h-32 object-cover rounded-md border border-border"
                   />
                 )}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
-                />
-                <Button type="button" variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setCoverCameraOpen(true)}>
                   <Camera className="w-4 h-4 mr-2" />
                   {coverFile ? "Retake Photo" : "Take Photo"}
                 </Button>
@@ -633,16 +628,8 @@ export function AddBookDialog({
                 className="w-24 h-32 object-cover rounded-md border border-border"
               />
             )}
-            <input
-              ref={backCoverCameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
-            />
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setBackCoverCameraOpen(true)}>
                 <Camera className="w-4 h-4 mr-2" />
                 {backCoverFile ? "Retake Photo" : "Take Photo"}
               </Button>
@@ -659,6 +646,18 @@ export function AddBookDialog({
           </Button>
         </form>
       </DialogContent>
+      <CameraCapture
+        open={coverCameraOpen}
+        onOpenChange={setCoverCameraOpen}
+        onCapture={(f) => setCoverFile(f)}
+        title="Take Book Cover Photo"
+      />
+      <CameraCapture
+        open={backCoverCameraOpen}
+        onOpenChange={setBackCoverCameraOpen}
+        onCapture={(f) => setBackCoverFile(f)}
+        title="Take Back Cover Photo"
+      />
     </Dialog>
   );
 }

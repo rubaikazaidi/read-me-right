@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Book } from "@/types/book";
 import { getDeweyForCategory } from "@/lib/dewey";
+import { CameraCapture } from "@/components/CameraCapture";
 
 interface EditBookDialogProps {
   book: Book;
@@ -44,6 +45,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [loading, setLoading] = useState(false);
 
   const [deleting, setDeleting] = useState(false);
+  const [coverCameraOpen, setCoverCameraOpen] = useState(false);
+  const [backCoverCameraOpen, setBackCoverCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const backCoverFileInputRef = useRef<HTMLInputElement>(null);
@@ -412,8 +415,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 />
               </TabsContent>
               <TabsContent value="camera">
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-                <Button type="button" variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setCoverCameraOpen(true)}>
                   <Camera className="h-4 w-4 mr-2" />Take Photo
                 </Button>
               </TabsContent>
@@ -451,16 +453,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 </Button>
               </div>
             )}
-            <input
-              ref={backCoverCameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
-            />
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setBackCoverCameraOpen(true)}>
                 <Camera className="h-4 w-4 mr-2" />{(backCoverFile || backCoverUrl) ? "Retake Photo" : "Take Photo"}
               </Button>
             </div>
@@ -499,6 +493,18 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
           </div>
         </form>
       </DialogContent>
+      <CameraCapture
+        open={coverCameraOpen}
+        onOpenChange={setCoverCameraOpen}
+        onCapture={(f) => { setCoverFile(f); setCoverPreview(URL.createObjectURL(f)); setCoverUrl(""); }}
+        title="Take Book Cover Photo"
+      />
+      <CameraCapture
+        open={backCoverCameraOpen}
+        onOpenChange={setBackCoverCameraOpen}
+        onCapture={(f) => { setBackCoverFile(f); setBackCoverUrl(""); }}
+        title="Take Back Cover Photo"
+      />
     </Dialog>
   );
 }
