@@ -11,6 +11,7 @@ import { useOrganization } from "@/hooks/useOrganization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getDeweyForCategory } from "@/lib/dewey";
+import { CameraCapture } from "@/components/CameraCapture";
 
 interface AddBookDialogProps {
   onBookAdded: () => void;
