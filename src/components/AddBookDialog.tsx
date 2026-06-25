@@ -646,6 +646,18 @@ export function AddBookDialog({
           </Button>
         </form>
       </DialogContent>
+      <CameraCapture
+        open={coverCameraOpen}
+        onOpenChange={setCoverCameraOpen}
+        onCapture={(f) => setCoverFile(f)}
+        title="Take Book Cover Photo"
+      />
+      <CameraCapture
+        open={backCoverCameraOpen}
+        onOpenChange={setBackCoverCameraOpen}
+        onCapture={(f) => setBackCoverFile(f)}
+        title="Take Back Cover Photo"
+      />
     </Dialog>
   );
 }
