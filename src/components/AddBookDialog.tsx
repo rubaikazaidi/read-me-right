@@ -628,16 +628,8 @@ export function AddBookDialog({
                 className="w-24 h-32 object-cover rounded-md border border-border"
               />
             )}
-            <input
-              ref={backCoverCameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
-            />
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setBackCoverCameraOpen(true)}>
                 <Camera className="w-4 h-4 mr-2" />
                 {backCoverFile ? "Retake Photo" : "Take Photo"}
               </Button>
