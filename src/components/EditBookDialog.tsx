@@ -45,6 +45,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
   const [loading, setLoading] = useState(false);
 
   const [deleting, setDeleting] = useState(false);
+  const [coverCameraOpen, setCoverCameraOpen] = useState(false);
+  const [backCoverCameraOpen, setBackCoverCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const backCoverFileInputRef = useRef<HTMLInputElement>(null);
