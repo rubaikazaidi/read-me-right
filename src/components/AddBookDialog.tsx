@@ -597,15 +597,7 @@ export function AddBookDialog({
                     className="w-24 h-32 object-cover rounded-md border border-border"
                   />
                 )}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
-                />
-                <Button type="button" variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setCoverCameraOpen(true)}>
                   <Camera className="w-4 h-4 mr-2" />
                   {coverFile ? "Retake Photo" : "Take Photo"}
                 </Button>
