@@ -453,16 +453,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 </Button>
               </div>
             )}
-            <input
-              ref={backCoverCameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setBackCoverFile(f); setBackCoverUrl(""); } }}
-            />
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setBackCoverCameraOpen(true)}>
                 <Camera className="h-4 w-4 mr-2" />{(backCoverFile || backCoverUrl) ? "Retake Photo" : "Take Photo"}
               </Button>
             </div>
