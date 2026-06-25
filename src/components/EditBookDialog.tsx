@@ -396,9 +396,8 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
               </div>
             )}
             <Tabs defaultValue="url" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="url" className="text-xs"><LinkIcon className="h-3 w-3 mr-1" />URL</TabsTrigger>
-                <TabsTrigger value="upload" className="text-xs"><Upload className="h-3 w-3 mr-1" />Upload</TabsTrigger>
                 <TabsTrigger value="camera" className="text-xs"><Camera className="h-3 w-3 mr-1" />Camera</TabsTrigger>
               </TabsList>
               <TabsContent value="url">
@@ -411,12 +410,6 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                     setCoverPreview(null);
                   }}
                 />
-              </TabsContent>
-              <TabsContent value="upload">
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-4 w-4 mr-2" />Choose File
-                </Button>
               </TabsContent>
               <TabsContent value="camera">
                 <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
