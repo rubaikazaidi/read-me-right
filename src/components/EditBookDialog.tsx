@@ -415,8 +415,7 @@ export function EditBookDialog({ book, open, onOpenChange, onBookUpdated }: Edit
                 />
               </TabsContent>
               <TabsContent value="camera">
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-                <Button type="button" variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Button type="button" variant="outline" className="w-full" onClick={() => setCoverCameraOpen(true)}>
                   <Camera className="h-4 w-4 mr-2" />Take Photo
                 </Button>
               </TabsContent>
