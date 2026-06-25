@@ -624,7 +624,7 @@ export function AddBookDialog({
           <div className="space-y-2">
             <Label>Back Cover Photo</Label>
             <p className="text-xs text-muted-foreground">
-              Take or upload a photo of the back of the book so students can read the printed summary.
+              Take a photo of the back of the book so students can read the printed summary.
             </p>
             {backCoverFile && (
               <img
@@ -633,13 +633,6 @@ export function AddBookDialog({
                 className="w-24 h-32 object-cover rounded-md border border-border"
               />
             )}
-            <input
-              ref={backCoverFileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => setBackCoverFile(e.target.files?.[0] || null)}
-            />
             <input
               ref={backCoverCameraInputRef}
               type="file"
@@ -651,11 +644,7 @@ export function AddBookDialog({
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverCameraInputRef.current?.click()}>
                 <Camera className="w-4 h-4 mr-2" />
-                Take Photo
-              </Button>
-              <Button type="button" variant="outline" className="flex-1" onClick={() => backCoverFileInputRef.current?.click()}>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
+                {backCoverFile ? "Retake Photo" : "Take Photo"}
               </Button>
               {backCoverFile && (
                 <Button type="button" variant="ghost" size="icon" onClick={() => setBackCoverFile(null)}>
