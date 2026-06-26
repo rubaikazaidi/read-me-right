@@ -441,6 +441,10 @@ export type Database = {
         Args: { book_id_param: string }
         Returns: number
       }
+      get_organization_librarian_count: {
+        Args: { _org_id: string }
+        Returns: number
+      }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       handle_book_request: {
         Args: { book_id_param: string; user_id_param: string }
@@ -452,6 +456,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      join_organization_as_librarian: {
+        Args: { _org_id: string }
+        Returns: undefined
       }
       list_public_organizations: {
         Args: never
