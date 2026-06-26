@@ -21,7 +21,9 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [signupRole, setSignupRole] = useState<"student" | "librarian">("student");
+  const [librarianMode, setLibrarianMode] = useState<"create" | "join">("create");
   const [librarianOrgName, setLibrarianOrgName] = useState("");
+  const [librarianJoinOrgId, setLibrarianJoinOrgId] = useState("");
   const [grade, setGrade] = useState("");
   const [age, setAge] = useState("");
   const [grNumber, setGrNumber] = useState("");
