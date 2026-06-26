@@ -522,20 +522,71 @@ const Auth = () => {
                 {signupRole === "librarian" ? (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm font-medium text-muted-foreground">Librarian / Organization Details</p>
+
                     <div className="space-y-2">
-                      <Label htmlFor="librarianOrgName">Organization Name *</Label>
-                      <Input
-                        id="librarianOrgName"
-                        type="text"
-                        placeholder="e.g., Springfield High School Library"
-                        value={librarianOrgName}
-                        onChange={(e) => setLibrarianOrgName(e.target.value)}
-                        required
-                      />
+                      <Label>Organization access</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={librarianMode === "create" ? "default" : "outline"}
+                          onClick={() => setLibrarianMode("create")}
+                        >
+                          Create new
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={librarianMode === "join" ? "default" : "outline"}
+                          onClick={() => setLibrarianMode("join")}
+                        >
+                          Join existing
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        This name is case-sensitive and must be unique. Each librarian email can only manage one organization.
+                        Each organization can have up to 5 librarian accounts. Choose "Join existing" to be added as an additional librarian.
                       </p>
                     </div>
+
+                    {librarianMode === "create" ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="librarianOrgName">Organization Name *</Label>
+                        <Input
+                          id="librarianOrgName"
+                          type="text"
+                          placeholder="e.g., Springfield High School Library"
+                          value={librarianOrgName}
+                          onChange={(e) => setLibrarianOrgName(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          This name is case-sensitive and must be unique.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="librarianJoinOrg">Select Organization *</Label>
+                        {organizations.length > 0 ? (
+                          <Select value={librarianJoinOrgId} onValueChange={setLibrarianJoinOrgId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  {org.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                            No organizations available yet.
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          You'll instantly get librarian access (limit: 5 librarians per organization).
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
