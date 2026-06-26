@@ -241,11 +241,20 @@ const Auth = () => {
             return;
           }
         } else {
-          if (!librarianOrgName.trim()) {
+          if (librarianMode === "create" && !librarianOrgName.trim()) {
             toast({
               variant: "destructive",
               title: "Organization name required",
               description: "Please enter the name of the organization you want to create.",
+            });
+            setLoading(false);
+            return;
+          }
+          if (librarianMode === "join" && !librarianJoinOrgId) {
+            toast({
+              variant: "destructive",
+              title: "Organization required",
+              description: "Please select the organization you want to join as a librarian.",
             });
             setLoading(false);
             return;
