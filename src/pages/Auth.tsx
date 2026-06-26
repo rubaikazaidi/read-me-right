@@ -277,36 +277,51 @@ const Auth = () => {
 
         if (authData.user) {
           if (signupRole === "librarian") {
-            // Create the organization (unique constraint enforces 1 org per email)
-            const { data: orgData, error: orgError } = await supabase
-              .from("organizations")
-              .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
-              .select()
-              .single();
+            if (librarianMode === "create") {
+              // Create the organization (unique constraint enforces 1 org per email)
+              const { data: orgData, error: orgError } = await supabase
+                .from("organizations")
+                .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
+                .select()
+                .single();
 
-            if (orgError) {
-              if (orgError.code === "23505") {
-                throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+              if (orgError) {
+                if (orgError.code === "23505") {
+                  throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+                }
+                throw orgError;
               }
-              throw orgError;
-            }
 
-            const { error: profileError } = await supabase
-              .from("profiles")
-              .insert({
-                id: authData.user.id,
-                full_name: fullName,
-                email: email,
-                organization_id: orgData.id,
+              const { error: profileError } = await supabase
+                .from("profiles")
+                .insert({
+                  id: authData.user.id,
+                  full_name: fullName,
+                  email: email,
+                  organization_id: orgData.id,
+                });
+
+              if (profileError) throw profileError;
+
+              toast({
+                title: "Organization created!",
+                description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
+              });
+              navigate("/");
+            } else {
+              // Join existing organization as an additional librarian (up to 5 per org)
+              const { error: joinError } = await supabase.rpc("join_organization_as_librarian", {
+                _org_id: librarianJoinOrgId,
               });
 
-            if (profileError) throw profileError;
+              if (joinError) throw joinError;
 
-            toast({
-              title: "Organization created!",
-              description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
-            });
-            navigate("/");
+              toast({
+                title: "Joined organization!",
+                description: "You now have librarian access to this organization.",
+              });
+              navigate("/");
+            }
           } else {
             // Create profile WITHOUT organization_id — student will be added once librarian approves
             const { error: profileError } = await supabase
