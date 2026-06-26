@@ -21,7 +21,9 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [signupRole, setSignupRole] = useState<"student" | "librarian">("student");
+  const [librarianMode, setLibrarianMode] = useState<"create" | "join">("create");
   const [librarianOrgName, setLibrarianOrgName] = useState("");
+  const [librarianJoinOrgId, setLibrarianJoinOrgId] = useState("");
   const [grade, setGrade] = useState("");
   const [age, setAge] = useState("");
   const [grNumber, setGrNumber] = useState("");
@@ -239,11 +241,20 @@ const Auth = () => {
             return;
           }
         } else {
-          if (!librarianOrgName.trim()) {
+          if (librarianMode === "create" && !librarianOrgName.trim()) {
             toast({
               variant: "destructive",
               title: "Organization name required",
               description: "Please enter the name of the organization you want to create.",
+            });
+            setLoading(false);
+            return;
+          }
+          if (librarianMode === "join" && !librarianJoinOrgId) {
+            toast({
+              variant: "destructive",
+              title: "Organization required",
+              description: "Please select the organization you want to join as a librarian.",
             });
             setLoading(false);
             return;
@@ -266,36 +277,51 @@ const Auth = () => {
 
         if (authData.user) {
           if (signupRole === "librarian") {
-            // Create the organization (unique constraint enforces 1 org per email)
-            const { data: orgData, error: orgError } = await supabase
-              .from("organizations")
-              .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
-              .select()
-              .single();
+            if (librarianMode === "create") {
+              // Create the organization (unique constraint enforces 1 org per email)
+              const { data: orgData, error: orgError } = await supabase
+                .from("organizations")
+                .insert({ name: librarianOrgName.trim(), created_by: authData.user.id })
+                .select()
+                .single();
 
-            if (orgError) {
-              if (orgError.code === "23505") {
-                throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+              if (orgError) {
+                if (orgError.code === "23505") {
+                  throw new Error("This email has already created an organization. Each librarian email can only manage one organization.");
+                }
+                throw orgError;
               }
-              throw orgError;
-            }
 
-            const { error: profileError } = await supabase
-              .from("profiles")
-              .insert({
-                id: authData.user.id,
-                full_name: fullName,
-                email: email,
-                organization_id: orgData.id,
+              const { error: profileError } = await supabase
+                .from("profiles")
+                .insert({
+                  id: authData.user.id,
+                  full_name: fullName,
+                  email: email,
+                  organization_id: orgData.id,
+                });
+
+              if (profileError) throw profileError;
+
+              toast({
+                title: "Organization created!",
+                description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
+              });
+              navigate("/");
+            } else {
+              // Join existing organization as an additional librarian (up to 5 per org)
+              const { error: joinError } = await supabase.rpc("join_organization_as_librarian", {
+                _org_id: librarianJoinOrgId,
               });
 
-            if (profileError) throw profileError;
+              if (joinError) throw joinError;
 
-            toast({
-              title: "Organization created!",
-              description: `Welcome to ${librarianOrgName}. You can now manage your library.`,
-            });
-            navigate("/");
+              toast({
+                title: "Joined organization!",
+                description: "You now have librarian access to this organization.",
+              });
+              navigate("/");
+            }
           } else {
             // Create profile WITHOUT organization_id — student will be added once librarian approves
             const { error: profileError } = await supabase
@@ -496,20 +522,71 @@ const Auth = () => {
                 {signupRole === "librarian" ? (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm font-medium text-muted-foreground">Librarian / Organization Details</p>
+
                     <div className="space-y-2">
-                      <Label htmlFor="librarianOrgName">Organization Name *</Label>
-                      <Input
-                        id="librarianOrgName"
-                        type="text"
-                        placeholder="e.g., Springfield High School Library"
-                        value={librarianOrgName}
-                        onChange={(e) => setLibrarianOrgName(e.target.value)}
-                        required
-                      />
+                      <Label>Organization access</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={librarianMode === "create" ? "default" : "outline"}
+                          onClick={() => setLibrarianMode("create")}
+                        >
+                          Create new
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={librarianMode === "join" ? "default" : "outline"}
+                          onClick={() => setLibrarianMode("join")}
+                        >
+                          Join existing
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        This name is case-sensitive and must be unique. Each librarian email can only manage one organization.
+                        Each organization can have up to 5 librarian accounts. Choose "Join existing" to be added as an additional librarian.
                       </p>
                     </div>
+
+                    {librarianMode === "create" ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="librarianOrgName">Organization Name *</Label>
+                        <Input
+                          id="librarianOrgName"
+                          type="text"
+                          placeholder="e.g., Springfield High School Library"
+                          value={librarianOrgName}
+                          onChange={(e) => setLibrarianOrgName(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          This name is case-sensitive and must be unique.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="librarianJoinOrg">Select Organization *</Label>
+                        {organizations.length > 0 ? (
+                          <Select value={librarianJoinOrgId} onValueChange={setLibrarianJoinOrgId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  {org.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                            No organizations available yet.
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          You'll instantly get librarian access (limit: 5 librarians per organization).
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
