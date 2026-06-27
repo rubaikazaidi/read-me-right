@@ -458,7 +458,7 @@ export function AddBookDialog({
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={title}
@@ -469,7 +469,7 @@ export function AddBookDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="author">Author</Label>
+            <Label htmlFor="author">Author *</Label>
             <Input
               id="author"
               value={author}
@@ -480,7 +480,7 @@ export function AddBookDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="isbn">ISBN</Label>
+            <Label htmlFor="isbn">ISBN *</Label>
             <Input
               id="isbn"
               value={isbn}
@@ -491,7 +491,7 @@ export function AddBookDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Category *</Label>
             <Select value={category} onValueChange={handleCategoryChange} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
@@ -591,7 +591,7 @@ export function AddBookDialog({
 
 
           <div className="space-y-2">
-            <Label>Book Cover</Label>
+            <Label>Book Cover *</Label>
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="url">
@@ -638,7 +638,7 @@ export function AddBookDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Back Cover Photo</Label>
+            <Label>Back Cover Photo *</Label>
             <p className="text-xs text-muted-foreground">
               Take a photo of the back of the book so students can read the printed summary.
             </p>
