@@ -510,10 +510,10 @@ export function AddBookDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ageRating">Age Rating</Label>
-            <Select value={ageRating} onValueChange={setAgeRating}>
+            <Label htmlFor="ageRating">Age Rating *</Label>
+            <Select value={ageRating} onValueChange={setAgeRating} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select age rating (optional)" />
+                <SelectValue placeholder="Select age rating" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Ages</SelectItem>
