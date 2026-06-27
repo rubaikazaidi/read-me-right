@@ -263,6 +263,27 @@ export function AddBookDialog({
       });
       return;
     }
+
+    if (!title.trim() || !author.trim() || !isbn.trim()) {
+      toast({ variant: "destructive", title: "Missing details", description: "Title, author, and ISBN are required." });
+      return;
+    }
+    if (!category) {
+      toast({ variant: "destructive", title: "Category required", description: "Please select a category for the book." });
+      return;
+    }
+    if (!ageRating) {
+      toast({ variant: "destructive", title: "Age rating required", description: "Please select an age rating for the book." });
+      return;
+    }
+    if (!coverFile && !coverUrl.trim()) {
+      toast({ variant: "destructive", title: "Book cover required", description: "Please add a front cover (photo or URL)." });
+      return;
+    }
+    if (!backCoverFile) {
+      toast({ variant: "destructive", title: "Back cover required", description: "Please take a photo of the back cover." });
+      return;
+    }
     
     setLoading(true);
 
