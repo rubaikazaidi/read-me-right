@@ -28,6 +28,7 @@ import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { isAgeAppropriate } from "@/lib/ageRating";
 
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +37,7 @@ const Index = () => {
   const { organization, organizationId } = useOrganization();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [rawBooks, setRawBooks] = useState<Book[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<GroupedBook[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +48,7 @@ const Index = () => {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [studentAge, setStudentAge] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
   // QR Scanner states
@@ -78,13 +81,14 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, age")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
       if (data) {
         setUserName(data.full_name);
+        setStudentAge(data.age ?? null);
       }
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
@@ -100,8 +104,7 @@ const Index = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setBooks(data as Book[] || []);
-      setFilteredBooks(groupBooksByIsbn(data as Book[] || []));
+      setRawBooks((data as Book[]) || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -112,6 +115,21 @@ const Index = () => {
       setLoading(false);
     }
   };
+
+  // Apply age-rating restriction for students: hide books above their age.
+  // Books the student has already borrowed remain visible.
+  useEffect(() => {
+    if (userRole === "student") {
+      const visible = rawBooks.filter(
+        (b) =>
+          isAgeAppropriate(studentAge, b.age_rating) ||
+          (user && b.borrowed_by === user.id)
+      );
+      setBooks(visible);
+    } else {
+      setBooks(rawBooks);
+    }
+  }, [rawBooks, studentAge, userRole, user]);
 
   const fetchUserRequests = async () => {
     if (!user) return;
