@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, BookOpen, ArrowLeft, ArrowUpDown, LayoutGrid, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isAgeAppropriate } from "@/lib/ageRating";
 
 const CategoryBooks = () => {
   const { categoryName } = useParams<{ categoryName: string }>();
@@ -33,6 +34,7 @@ const CategoryBooks = () => {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [userRequests, setUserRequests] = useState<Record<string, { status: string; queue_position: number | null }>>({});
+  const [studentAge, setStudentAge] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -41,9 +43,22 @@ const CategoryBooks = () => {
   useEffect(() => {
     if (user) {
       fetchBooks();
-      if (userRole === "student") fetchUserRequests();
+      if (userRole === "student") {
+        fetchUserRequests();
+        fetchStudentAge();
+      }
     }
   }, [user, userRole]);
+
+  const fetchStudentAge = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("age")
+      .eq("id", user.id)
+      .single();
+    setStudentAge(data?.age ?? null);
+  };
 
   const fetchBooks = async () => {
     try {
@@ -89,6 +104,13 @@ const CategoryBooks = () => {
     if (statusFilter !== "all") {
       filtered = filtered.filter((b) => b.status === statusFilter);
     }
+    if (userRole === "student") {
+      filtered = filtered.filter(
+        (b) =>
+          isAgeAppropriate(studentAge, b.age_rating) ||
+          (user && b.borrowed_by === user.id)
+      );
+    }
     let grouped = groupBooksByIsbn(filtered);
     grouped = [...grouped].sort((a, b) => {
       switch (sortBy) {
@@ -101,7 +123,7 @@ const CategoryBooks = () => {
       }
     });
     setFilteredBooks(grouped);
-  }, [searchTerm, statusFilter, books, sortBy]);
+  }, [searchTerm, statusFilter, books, sortBy, userRole, studentAge, user]);
 
   const handleRequestBook = async (bookId: string) => {
     if (!user) return;
