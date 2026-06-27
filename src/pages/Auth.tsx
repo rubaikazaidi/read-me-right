@@ -240,6 +240,15 @@ const Auth = () => {
             setLoading(false);
             return;
           }
+          if (!age || isNaN(parseInt(age))) {
+            toast({
+              variant: "destructive",
+              title: "Age required",
+              description: "Please enter the student's age.",
+            });
+            setLoading(false);
+            return;
+          }
         } else {
           if (librarianMode === "create" && !librarianOrgName.trim()) {
             toast({
@@ -626,7 +635,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="age">Age</Label>
+                        <Label htmlFor="age">Age *</Label>
                         <Input
                           id="age"
                           type="number"
@@ -635,6 +644,7 @@ const Auth = () => {
                           placeholder="e.g., 16"
                           value={age}
                           onChange={(e) => setAge(e.target.value)}
+                          required
                         />
                       </div>
                     </div>
