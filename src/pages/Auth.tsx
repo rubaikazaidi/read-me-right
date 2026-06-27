@@ -626,7 +626,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="age">Age</Label>
+                        <Label htmlFor="age">Age *</Label>
                         <Input
                           id="age"
                           type="number"
@@ -635,6 +635,7 @@ const Auth = () => {
                           placeholder="e.g., 16"
                           value={age}
                           onChange={(e) => setAge(e.target.value)}
+                          required
                         />
                       </div>
                     </div>
