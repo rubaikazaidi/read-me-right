@@ -240,6 +240,15 @@ const Auth = () => {
             setLoading(false);
             return;
           }
+          if (!age || isNaN(parseInt(age))) {
+            toast({
+              variant: "destructive",
+              title: "Age required",
+              description: "Please enter the student's age.",
+            });
+            setLoading(false);
+            return;
+          }
         } else {
           if (librarianMode === "create" && !librarianOrgName.trim()) {
             toast({
