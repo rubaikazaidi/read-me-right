@@ -75,6 +75,8 @@ export function ScanIssueBookDialog({
   const [loading, setLoading] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [returning, setReturning] = useState(false);
+  const [returnDamaged, setReturnDamaged] = useState(false);
+  const [returnDamageNotes, setReturnDamageNotes] = useState("");
   const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
   const [allCopies, setAllCopies] = useState<BookInfo[]>([]);
   const [borrowerInfo, setBorrowerInfo] = useState<Profile | null>(null);
