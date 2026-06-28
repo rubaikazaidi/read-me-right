@@ -295,24 +295,35 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
                 {copies.map((c) => {
                   const s = statusConfig[c.status];
                   return (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs font-mono">
-                          Copy #{c.copy_number}
-                        </Badge>
-                        {c.borrower_name && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {c.borrower_name}
-                          </span>
-                        )}
-                        {c.due_date && (c.status === "borrowed" || c.status === "late") && (
-                          <span className="text-xs text-muted-foreground">
-                            Due {new Date(c.due_date).toLocaleDateString()}
-                          </span>
-                        )}
+                    <div key={c.id} className="flex flex-col gap-1 p-3 bg-muted/30 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs font-mono">
+                            Copy #{c.copy_number}
+                          </Badge>
+                          {c.is_damaged && (
+                            <Badge variant="destructive" className="text-[10px]">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Damaged
+                            </Badge>
+                          )}
+                          {c.borrower_name && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {c.borrower_name}
+                            </span>
+                          )}
+                          {c.due_date && (c.status === "borrowed" || c.status === "late") && (
+                            <span className="text-xs text-muted-foreground">
+                              Due {new Date(c.due_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
                       </div>
-                      <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
+                      {c.is_damaged && c.damage_notes && (
+                        <p className="text-xs text-destructive/90 pl-1">Note: {c.damage_notes}</p>
+                      )}
                     </div>
                   );
                 })}
