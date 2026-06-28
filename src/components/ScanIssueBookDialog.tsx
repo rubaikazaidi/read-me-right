@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Search, BookOpen, AlertCircle, QrCode, Barcode, RotateCcw, User, PlusCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ScanType } from "./QRCodeScanner";
 import { differenceInDays } from "date-fns";
 
