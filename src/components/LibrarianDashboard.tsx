@@ -858,6 +858,17 @@ export function LibrarianDashboard() {
           bookAuthor={selectedBookForQR.author}
         />
       )}
+
+      <ReturnBookDialog
+        open={returnDialogOpen}
+        onOpenChange={(open) => {
+          setReturnDialogOpen(open);
+          if (!open) setBookToReturn(null);
+        }}
+        bookTitle={bookToReturn?.title}
+        submitting={returnSubmitting}
+        onConfirm={handleConfirmReturn}
+      />
     </div>
   );
 }
