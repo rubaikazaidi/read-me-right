@@ -143,6 +143,8 @@ export function ScanIssueBookDialog({
       setBorrowerInfo(null);
       setAllCopies([]);
       setExternalLookup(null);
+      setReturnDamaged(false);
+      setReturnDamageNotes("");
     }
   }, [open, scanValue, scanType]);
 
