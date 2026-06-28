@@ -607,13 +607,44 @@ export function ScanIssueBookDialog({
                 </div>
               </div>
               
+              <div className="rounded-md border border-orange-200 dark:border-orange-800 bg-background/70 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="scan-damaged-toggle" className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-status-late" />
+                      Returned damaged?
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Flag this copy as damaged in the catalog.
+                    </p>
+                  </div>
+                  <Switch
+                    id="scan-damaged-toggle"
+                    checked={returnDamaged}
+                    onCheckedChange={setReturnDamaged}
+                  />
+                </div>
+                {returnDamaged && (
+                  <div className="space-y-2">
+                    <Label htmlFor="scan-damage-notes">Damage details</Label>
+                    <Textarea
+                      id="scan-damage-notes"
+                      placeholder="Describe the damage (torn pages, water damage, missing cover...)"
+                      value={returnDamageNotes}
+                      onChange={(e) => setReturnDamageNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </div>
+
               <Button 
                 onClick={handleReturn} 
                 disabled={returning}
                 className="w-full bg-orange-600 hover:bg-orange-700 text-white"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                {returning ? "Returning..." : "Return Book to Library"}
+                {returning ? "Returning..." : returnDamaged ? "Return Book (Damaged)" : "Return Book to Library"}
               </Button>
             </div>
           )}
