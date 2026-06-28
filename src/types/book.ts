@@ -22,6 +22,8 @@ export interface Book {
   price?: number | null;
   page_count?: number | null;
   publisher?: string | null;
+  is_damaged?: boolean | null;
+  damage_notes?: string | null;
 }
 
 
