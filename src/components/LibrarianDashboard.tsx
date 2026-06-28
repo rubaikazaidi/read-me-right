@@ -338,10 +338,20 @@ export function LibrarianDashboard() {
     try {
       // First, get the book details to record in history
       const bookToReturn = books.find(b => b.id === bookId);
-      if (!bookToReturn || !bookToReturn.borrowed_by) {
-        throw new Error("Book not found or not borrowed");
-      }
+  const handleMarkAsReturned = (bookId: string) => {
+    const bookToReturnFound = books.find(b => b.id === bookId);
+    if (!bookToReturnFound || !bookToReturnFound.borrowed_by) {
+      toast({ variant: "destructive", title: "Error", description: "Book not found or not borrowed" });
+      return;
+    }
+    setBookToReturn(bookToReturnFound);
+    setReturnDialogOpen(true);
+  };
 
+  const handleConfirmReturn = async ({ isDamaged, damageNotes }: { isDamaged: boolean; damageNotes: string }) => {
+    if (!bookToReturn || !bookToReturn.borrowed_by) return;
+    setReturnSubmitting(true);
+    try {
       const now = new Date();
       const wasLate = bookToReturn.status === "late";
       let daysLate = 0;
@@ -353,11 +363,10 @@ export function LibrarianDashboard() {
         fineAmount = calculateFine(bookToReturn.due_date);
       }
 
-      // Record the borrowing history
       const { error: historyError } = await supabase
         .from("borrowing_history")
         .insert({
-          book_id: bookId,
+          book_id: bookToReturn.id,
           user_id: bookToReturn.borrowed_by,
           book_title: bookToReturn.title,
           book_author: bookToReturn.author,
@@ -371,37 +380,44 @@ export function LibrarianDashboard() {
 
       if (historyError) {
         console.error("Failed to record history:", historyError);
-        // Continue with the return even if history fails
       }
 
-      // Update the book status
+      const updatePayload: any = {
+        status: "available",
+        borrowed_by: null,
+        borrowed_at: null,
+        due_date: null,
+      };
+      if (isDamaged) {
+        updatePayload.is_damaged = true;
+        updatePayload.damage_notes = damageNotes || null;
+      }
+
       const { error } = await supabase
         .from("books")
-        .update({
-          status: "available",
-          borrowed_by: null,
-          borrowed_at: null,
-          due_date: null,
-        })
-        .eq("id", bookId);
+        .update(updatePayload)
+        .eq("id", bookToReturn.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Book marked as returned and is now available",
+        description: isDamaged
+          ? "Book returned and flagged as damaged"
+          : "Book marked as returned and is now available",
       });
 
+      setReturnDialogOpen(false);
+      setBookToReturn(null);
       fetchBooks();
       fetchRequests();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setReturnSubmitting(false);
     }
   };
+
 
   const handleUpdateBookStatus = async (bookId: string, newStatus: string, book?: BookWithBorrower) => {
     // If changing to borrowed, open the assign dialog
