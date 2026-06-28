@@ -178,7 +178,18 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
               <p className="text-sm text-muted-foreground">
                 Dewey Decimal: <span className="font-mono font-medium text-foreground">{book.dewey_decimal || "—"}</span>
               </p>
-              <Badge className={`mt-2 ${statusStyle.className}`}>{statusStyle.label}</Badge>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
+                {book.is_damaged && (
+                  <Badge variant="destructive">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Damaged
+                  </Badge>
+                )}
+              </div>
+              {book.is_damaged && book.damage_notes && (
+                <p className="text-xs text-destructive mt-2">Damage: {book.damage_notes}</p>
+              )}
             </div>
           </div>
 
