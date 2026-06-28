@@ -57,6 +57,10 @@ export function LibrarianDashboard() {
   // Add book dialog states
   const [addBookDialogOpen, setAddBookDialogOpen] = useState(false);
   const [scannedIsbnForAdd, setScannedIsbnForAdd] = useState<string>("");
+  // Return book dialog states
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [bookToReturn, setBookToReturn] = useState<BookWithBorrower | null>(null);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
   const { toast } = useToast();
   const { organizationId } = useOrganization();
 
