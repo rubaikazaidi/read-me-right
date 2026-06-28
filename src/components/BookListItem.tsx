@@ -80,6 +80,11 @@ export function BookListItem({
           <Badge className={`text-xs flex-shrink-0 ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
+          {book.is_damaged && (
+            <Badge variant="destructive" className="text-[10px] flex-shrink-0" title={book.damage_notes || "Damaged copy"}>
+              Damaged
+            </Badge>
+          )}
         </div>
         <p className="text-xs text-muted-foreground truncate">
           by {book.author}

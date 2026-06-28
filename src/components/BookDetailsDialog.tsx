@@ -42,6 +42,8 @@ interface CopyInfo {
   status: "available" | "borrowed" | "late";
   due_date: string | null;
   borrower_name: string | null;
+  is_damaged: boolean;
+  damage_notes: string | null;
 }
 
 export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialogProps) {
@@ -94,7 +96,7 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
       if (book.isbn) {
         const { data: copyData } = await supabase
           .from("books")
-          .select("id, copy_number, status, due_date, borrowed_by")
+          .select("id, copy_number, status, due_date, borrowed_by, is_damaged, damage_notes")
           .eq("isbn", book.isbn)
           .order("copy_number", { ascending: true });
 
@@ -119,6 +121,8 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
               status: c.status as CopyInfo["status"],
               due_date: c.due_date,
               borrower_name: c.borrowed_by ? borrowerMap[c.borrowed_by] ?? null : null,
+              is_damaged: !!c.is_damaged,
+              damage_notes: c.damage_notes ?? null,
             }))
           );
         } else {
@@ -174,7 +178,18 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
               <p className="text-sm text-muted-foreground">
                 Dewey Decimal: <span className="font-mono font-medium text-foreground">{book.dewey_decimal || "—"}</span>
               </p>
-              <Badge className={`mt-2 ${statusStyle.className}`}>{statusStyle.label}</Badge>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
+                {book.is_damaged && (
+                  <Badge variant="destructive">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Damaged
+                  </Badge>
+                )}
+              </div>
+              {book.is_damaged && book.damage_notes && (
+                <p className="text-xs text-destructive mt-2">Damage: {book.damage_notes}</p>
+              )}
             </div>
           </div>
 
@@ -291,24 +306,35 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
                 {copies.map((c) => {
                   const s = statusConfig[c.status];
                   return (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs font-mono">
-                          Copy #{c.copy_number}
-                        </Badge>
-                        {c.borrower_name && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {c.borrower_name}
-                          </span>
-                        )}
-                        {c.due_date && (c.status === "borrowed" || c.status === "late") && (
-                          <span className="text-xs text-muted-foreground">
-                            Due {new Date(c.due_date).toLocaleDateString()}
-                          </span>
-                        )}
+                    <div key={c.id} className="flex flex-col gap-1 p-3 bg-muted/30 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs font-mono">
+                            Copy #{c.copy_number}
+                          </Badge>
+                          {c.is_damaged && (
+                            <Badge variant="destructive" className="text-[10px]">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Damaged
+                            </Badge>
+                          )}
+                          {c.borrower_name && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {c.borrower_name}
+                            </span>
+                          )}
+                          {c.due_date && (c.status === "borrowed" || c.status === "late") && (
+                            <span className="text-xs text-muted-foreground">
+                              Due {new Date(c.due_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
                       </div>
-                      <Badge className={`text-xs ${s.className}`}>{s.label}</Badge>
+                      {c.is_damaged && c.damage_notes && (
+                        <p className="text-xs text-destructive/90 pl-1">Note: {c.damage_notes}</p>
+                      )}
                     </div>
                   );
                 })}

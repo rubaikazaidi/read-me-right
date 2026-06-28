@@ -127,9 +127,11 @@ export type Database = {
           copy_number: number
           cover_image_url: string | null
           created_at: string | null
+          damage_notes: string | null
           dewey_decimal: string | null
           due_date: string | null
           id: string
+          is_damaged: boolean
           isbn: string
           organization_id: string | null
           page_count: number | null
@@ -151,9 +153,11 @@ export type Database = {
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
+          damage_notes?: string | null
           dewey_decimal?: string | null
           due_date?: string | null
           id?: string
+          is_damaged?: boolean
           isbn: string
           organization_id?: string | null
           page_count?: number | null
@@ -175,9 +179,11 @@ export type Database = {
           copy_number?: number
           cover_image_url?: string | null
           created_at?: string | null
+          damage_notes?: string | null
           dewey_decimal?: string | null
           due_date?: string | null
           id?: string
+          is_damaged?: boolean
           isbn?: string
           organization_id?: string | null
           page_count?: number | null

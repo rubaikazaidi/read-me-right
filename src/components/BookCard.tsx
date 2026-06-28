@@ -65,6 +65,15 @@ export function BookCard({ book, onRequestBook, onLeaveQueue, isLibrarian = fals
           <Badge className={`absolute top-2 right-2 text-xs ${statusStyle.className}`}>
             {statusStyle.label}
           </Badge>
+          {book.is_damaged && (
+            <Badge
+              variant="destructive"
+              className="absolute top-9 right-2 text-[10px] px-1.5 py-0.5"
+              title={book.damage_notes || "Damaged copy"}
+            >
+              Damaged
+            </Badge>
+          )}
           {(book as GroupedBook).totalCopies > 1 && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 backdrop-blur-sm text-foreground text-xs font-semibold px-2 py-1 rounded-md shadow-sm border">
               <Copy className="w-3 h-3" />

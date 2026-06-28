@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Search, BookOpen, AlertCircle, QrCode, Barcode, RotateCcw, User, PlusCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ScanType } from "./QRCodeScanner";
 import { differenceInDays } from "date-fns";
 
@@ -73,6 +75,8 @@ export function ScanIssueBookDialog({
   const [loading, setLoading] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [returning, setReturning] = useState(false);
+  const [returnDamaged, setReturnDamaged] = useState(false);
+  const [returnDamageNotes, setReturnDamageNotes] = useState("");
   const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
   const [allCopies, setAllCopies] = useState<BookInfo[]>([]);
   const [borrowerInfo, setBorrowerInfo] = useState<Profile | null>(null);
@@ -139,6 +143,8 @@ export function ScanIssueBookDialog({
       setBorrowerInfo(null);
       setAllCopies([]);
       setExternalLookup(null);
+      setReturnDamaged(false);
+      setReturnDamageNotes("");
     }
   }, [open, scanValue, scanType]);
 
@@ -348,6 +354,10 @@ export function ScanIssueBookDialog({
       toast({ variant: "destructive", title: "Error", description: "Cannot return this book - missing borrowing information." });
       return;
     }
+    if (returnDamaged && returnDamageNotes.trim().length === 0) {
+      toast({ variant: "destructive", title: "Damage details required", description: "Please describe the damage before confirming." });
+      return;
+    }
 
     setReturning(true);
     try {
@@ -376,14 +386,20 @@ export function ScanIssueBookDialog({
       if (historyError) throw historyError;
 
       // Update book status to available
+      const updatePayload: any = {
+        status: "available",
+        borrowed_by: null,
+        borrowed_at: null,
+        due_date: null,
+      };
+      if (returnDamaged) {
+        updatePayload.is_damaged = true;
+        updatePayload.damage_notes = returnDamageNotes.trim() || null;
+      }
+
       const { error: updateError } = await supabase
         .from("books")
-        .update({
-          status: "available",
-          borrowed_by: null,
-          borrowed_at: null,
-          due_date: null,
-        })
+        .update(updatePayload)
         .eq("id", bookInfo.id);
 
       if (updateError) throw updateError;
@@ -591,13 +607,44 @@ export function ScanIssueBookDialog({
                 </div>
               </div>
               
+              <div className="rounded-md border border-orange-200 dark:border-orange-800 bg-background/70 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="scan-damaged-toggle" className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-status-late" />
+                      Returned damaged?
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Flag this copy as damaged in the catalog.
+                    </p>
+                  </div>
+                  <Switch
+                    id="scan-damaged-toggle"
+                    checked={returnDamaged}
+                    onCheckedChange={setReturnDamaged}
+                  />
+                </div>
+                {returnDamaged && (
+                  <div className="space-y-2">
+                    <Label htmlFor="scan-damage-notes">Damage details</Label>
+                    <Textarea
+                      id="scan-damage-notes"
+                      placeholder="Describe the damage (torn pages, water damage, missing cover...)"
+                      value={returnDamageNotes}
+                      onChange={(e) => setReturnDamageNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </div>
+
               <Button 
                 onClick={handleReturn} 
                 disabled={returning}
                 className="w-full bg-orange-600 hover:bg-orange-700 text-white"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                {returning ? "Returning..." : "Return Book to Library"}
+                {returning ? "Returning..." : returnDamaged ? "Return Book (Damaged)" : "Return Book to Library"}
               </Button>
             </div>
           )}
