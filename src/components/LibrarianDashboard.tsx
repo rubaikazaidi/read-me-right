@@ -334,10 +334,6 @@ export function LibrarianDashboard() {
     }
   };
 
-  const handleMarkAsReturned = async (bookId: string) => {
-    try {
-      // First, get the book details to record in history
-      const bookToReturn = books.find(b => b.id === bookId);
   const handleMarkAsReturned = (bookId: string) => {
     const bookToReturnFound = books.find(b => b.id === bookId);
     if (!bookToReturnFound || !bookToReturnFound.borrowed_by) {
