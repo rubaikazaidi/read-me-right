@@ -42,6 +42,8 @@ interface CopyInfo {
   status: "available" | "borrowed" | "late";
   due_date: string | null;
   borrower_name: string | null;
+  is_damaged: boolean;
+  damage_notes: string | null;
 }
 
 export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialogProps) {
