@@ -96,7 +96,7 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
       if (book.isbn) {
         const { data: copyData } = await supabase
           .from("books")
-          .select("id, copy_number, status, due_date, borrowed_by")
+          .select("id, copy_number, status, due_date, borrowed_by, is_damaged, damage_notes")
           .eq("isbn", book.isbn)
           .order("copy_number", { ascending: true });
 
@@ -121,6 +121,8 @@ export function BookDetailsDialog({ book, open, onOpenChange }: BookDetailsDialo
               status: c.status as CopyInfo["status"],
               due_date: c.due_date,
               borrower_name: c.borrowed_by ? borrowerMap[c.borrowed_by] ?? null : null,
+              is_damaged: !!c.is_damaged,
+              damage_notes: c.damage_notes ?? null,
             }))
           );
         } else {
