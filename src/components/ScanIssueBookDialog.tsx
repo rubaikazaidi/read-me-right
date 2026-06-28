@@ -352,6 +352,10 @@ export function ScanIssueBookDialog({
       toast({ variant: "destructive", title: "Error", description: "Cannot return this book - missing borrowing information." });
       return;
     }
+    if (returnDamaged && returnDamageNotes.trim().length === 0) {
+      toast({ variant: "destructive", title: "Damage details required", description: "Please describe the damage before confirming." });
+      return;
+    }
 
     setReturning(true);
     try {
