@@ -384,14 +384,20 @@ export function ScanIssueBookDialog({
       if (historyError) throw historyError;
 
       // Update book status to available
+      const updatePayload: any = {
+        status: "available",
+        borrowed_by: null,
+        borrowed_at: null,
+        due_date: null,
+      };
+      if (returnDamaged) {
+        updatePayload.is_damaged = true;
+        updatePayload.damage_notes = returnDamageNotes.trim() || null;
+      }
+
       const { error: updateError } = await supabase
         .from("books")
-        .update({
-          status: "available",
-          borrowed_by: null,
-          borrowed_at: null,
-          due_date: null,
-        })
+        .update(updatePayload)
         .eq("id", bookInfo.id);
 
       if (updateError) throw updateError;
