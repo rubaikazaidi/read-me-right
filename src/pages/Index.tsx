@@ -100,7 +100,7 @@ const Index = () => {
       // Fetch only essential columns for the list view - improves performance
       const { data, error } = await supabase
         .from("books")
-        .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, cover_image_url, category, copy_number, organization_id, created_at, age_rating, dewey_decimal, summary, back_cover_image_url, classification_number, vendor_bill, price, page_count, publisher")
+        .select("id, title, author, isbn, status, borrowed_by, borrowed_at, due_date, cover_image_url, category, copy_number, organization_id, created_at, age_rating, dewey_decimal, summary, back_cover_image_url, classification_number, vendor_bill, price, page_count, publisher, is_damaged, damage_notes")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
