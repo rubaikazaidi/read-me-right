@@ -16,6 +16,7 @@ import { QRCodeScanner, ScanResult, ScanType } from "./QRCodeScanner";
 import { BookQRCode } from "./BookQRCode";
 import { ScanIssueBookDialog } from "./ScanIssueBookDialog";
 import { AddBookDialog } from "./AddBookDialog";
+import { ReturnBookDialog } from "./ReturnBookDialog";
 
 interface BookRequest {
   id: string;
