@@ -422,7 +422,7 @@ const Index = () => {
             )}
           </div>
 
-          {searchTerm.trim() ? (
+          {searchTerm.trim() || statusFilter !== "all" ? (
             <div className="mt-2">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">
