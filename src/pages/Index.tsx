@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, Settings2 } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, Settings2, MoreVertical } from "lucide-react";
 import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -359,28 +359,50 @@ const Index = () => {
       userRequests={userRequests}
     >
       <div className="flex-1 bg-gradient-to-br from-background via-background/95 to-primary/5">
-        <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+        <header className="border-b bg-primary text-primary-foreground sticky top-0 z-10 md:bg-background/80 md:text-foreground md:backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-3 md:py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
                 <SidebarToggle />
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-primary" />
+                <div className="p-2 rounded-lg bg-primary-foreground/15 md:bg-primary/10 flex-shrink-0">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-primary-foreground md:text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg md:text-2xl font-bold text-primary-foreground md:text-foreground truncate leading-tight">
                     {organization?.name ? `${organization.name} Library` : "Library Management"}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs md:text-sm text-primary-foreground/75 md:text-muted-foreground truncate">
                     {userRole === "student" ? `Student: ${userName}` : `Librarian: ${userName}`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                 {userRole === "student" && user && (
                   <StudentProfileDialog userId={user.id} />
                 )}
-                <Button variant="outline" onClick={handleSignOut}>
+                {/* Mobile: overflow menu keeps the top row clean */}
+                <div className="md:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                        aria-label="More options"
+                      >
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                {/* Desktop: inline sign out */}
+                <Button variant="outline" onClick={handleSignOut} className="hidden md:inline-flex">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </Button>
@@ -403,14 +425,34 @@ const Index = () => {
               />
             </div>
             {userRole === "librarian" && (
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
+              <>
+                {/* Mobile: Scan Book is the hero action */}
+                <div className="md:hidden w-full space-y-2">
+                  <Button
+                    onClick={() => setQrScannerOpen(true)}
+                    size="lg"
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-accent to-ochre-dark text-accent-foreground hover:from-accent/90 hover:to-ochre-dark/90 shadow-lg shadow-accent/30"
+                  >
+                    <ScanLine className="h-5 w-5 mr-2" />
+                    Scan Book
+                  </Button>
+                  <Button
+                    onClick={() => setAddBookDialogOpen(true)}
+                    variant="outline"
+                    className="w-full h-10"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Book
+                  </Button>
+                </div>
+                {/* Desktop: unchanged */}
+                <div className="hidden md:flex gap-2">
                   <Button onClick={() => setAddBookDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Book
                   </Button>
-                  <Button 
-                    onClick={() => setQrScannerOpen(true)} 
+                  <Button
+                    onClick={() => setQrScannerOpen(true)}
                     size="default"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                   >
@@ -418,7 +460,7 @@ const Index = () => {
                     Scan Book
                   </Button>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
