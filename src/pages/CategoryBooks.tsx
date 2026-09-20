@@ -192,18 +192,24 @@ const CategoryBooks = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+      <header className="border-b bg-primary text-primary-foreground sticky top-0 z-10 md:bg-background/80 md:text-foreground md:backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="flex-shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground md:text-foreground md:hover:bg-primary/10 md:hover:text-foreground"
+              aria-label="Back to catalog"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BookOpen className="h-6 w-6 text-primary" />
+            <div className="p-2 rounded-lg bg-primary-foreground/15 md:bg-primary/10 flex-shrink-0">
+              <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-primary-foreground md:text-primary" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{decodedCategory}</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-2xl font-bold text-primary-foreground md:text-foreground truncate leading-tight">{decodedCategory}</h1>
+              <p className="text-xs md:text-sm text-primary-foreground/75 md:text-muted-foreground truncate">
                 {books.length} {books.length === 1 ? "book" : "books"} in this category
               </p>
             </div>

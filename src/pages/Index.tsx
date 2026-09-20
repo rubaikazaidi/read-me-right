@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, Settings2 } from "lucide-react";
+import { Search, BookOpen, LogOut, ArrowUpDown, Clock, Calendar, IndianRupee, LayoutGrid, List, ScanLine, Plus, ChevronDown, Settings2, MoreVertical } from "lucide-react";
 import { BookListItem } from "@/components/BookListItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -456,7 +456,7 @@ const Index = () => {
                     size="default"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                   >
-                    <ScanLine className="h-4 h-4 mr-2" />
+                    <ScanLine className="h-4 w-4 mr-2" />
                     Scan Book
                   </Button>
                 </div>
